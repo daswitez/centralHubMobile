@@ -21,13 +21,17 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import { PieChart, BarChart } from 'react-native-chart-kit';
 
 // Tipos y módulos de API para catálogos base.
 import type {
   Departamento,
   Municipio,
   VariedadPapa,
+  Planta,
+  Cliente,
 } from './src/api/catalogTypes';
+import type { LoteCampo } from './src/api/campoTypes';
 import {
   getDepartamentos,
   createDepartamento,
@@ -46,6 +50,9 @@ import {
   updateVariedad,
   deleteVariedad,
 } from './src/api/variedadesApi';
+import { getPlantas } from './src/api/plantasApi';
+import { getClientes } from './src/api/clientesApi';
+import { getLotesCampo } from './src/api/lotesCampoApi';
 
 // Pantallas adicionales para catálogos extendidos y campo.
 import {
@@ -102,6 +109,9 @@ const App: React.FC = () => {
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [variedades, setVariedades] = useState<VariedadPapa[]>([]);
+  const [plantas, setPlantas] = useState<Planta[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [lotesCampo, setLotesCampo] = useState<LoteCampo[]>([]);
 
   // Estado de carga y error global para los catálogos.
   const [isLoadingCatalogs, setIsLoadingCatalogs] = useState<boolean>(false);
@@ -129,15 +139,24 @@ const App: React.FC = () => {
         departamentosData,
         municipiosData,
         variedadesData,
+        plantasData,
+        clientesData,
+        lotesCampoData,
       ] = await Promise.all([
         getDepartamentos(),
         getMunicipios(),
         getVariedades(),
+        getPlantas(),
+        getClientes(),
+        getLotesCampo(),
       ]);
 
       setDepartamentos(departamentosData);
       setMunicipios(municipiosData);
       setVariedades(variedadesData);
+      setPlantas(plantasData);
+      setClientes(clientesData);
+      setLotesCampo(lotesCampoData);
     } catch (error) {
       setCatalogsErrorMessage(
         'No se pudieron cargar los catálogos desde el backend.'
@@ -198,6 +217,9 @@ const App: React.FC = () => {
               departamentos={departamentos}
               municipios={municipios}
               variedades={variedades}
+              plantas={plantas}
+              clientes={clientes}
+              lotesCampo={lotesCampo}
               isLoading={isLoadingCatalogs}
               errorMessage={catalogsErrorMessage}
               onReloadCatalogs={handleLoadCatalogs}
@@ -317,6 +339,9 @@ type DashboardSectionProps = {
   departamentos: Departamento[];
   municipios: Municipio[];
   variedades: VariedadPapa[];
+  plantas: Planta[];
+  clientes: Cliente[];
+  lotesCampo: LoteCampo[];
   isLoading: boolean;
   errorMessage: string | null;
   onReloadCatalogs: () => Promise<void>;
@@ -326,12 +351,129 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
   departamentos,
   municipios,
   variedades,
+  plantas,
+  clientes,
+  lotesCampo,
   isLoading,
   errorMessage,
 }) => {
   const totalDepartamentos = departamentos.length;
   const totalMunicipios = municipios.length;
   const totalVariedades = variedades.length;
+  const totalPlantas = plantas.length;
+  const totalClientes = clientes.length;
+  const totalLotes = lotesCampo.length;
+
+  // --- Data Processing for Charts ---
+
+  // 1. Municipios per Departamento (Top 5)
+  const municipiosCountByDepto = departamentos.map((d) => {
+    const count = municipios.filter((m) => m.departamento_id === d.departamento_id).length;
+    return { name: d.nombre, count };
+  });
+
+  // Sort by count descending and take top 5
+  const topDeptos = municipiosCountByDepto
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const barChartData = {
+    labels: topDeptos.map((d) => d.name),
+    datasets: [
+      {
+        data: topDeptos.map((d) => d.count),
+      },
+    ],
+  };
+
+  // 2. Variedades per Aptitud
+  const aptitudCounts: Record<string, number> = {};
+  variedades.forEach((v) => {
+    const apt = v.aptitud || 'Sin especificar';
+    aptitudCounts[apt] = (aptitudCounts[apt] || 0) + 1;
+  });
+
+  const pieChartData = Object.keys(aptitudCounts).map((key, index) => {
+    const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6366f1'];
+    return {
+      name: key,
+      population: aptitudCounts[key],
+      color: colors[index % colors.length],
+      legendFontColor: '#374151',
+      legendFontSize: 12,
+    };
+  });
+
+  // 3. Plantas per Municipio (Top 5)
+  const plantasCountByMuni = municipios.map((m) => {
+    const count = plantas.filter((p) => p.municipio_id === m.municipio_id).length;
+    return { name: m.nombre, count };
+  });
+
+  const topMunisPlantas = plantasCountByMuni
+    .filter((m) => m.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const barChartPlantasData = {
+    labels: topMunisPlantas.map((m) => m.name),
+    datasets: [
+      {
+        data: topMunisPlantas.map((m) => m.count),
+      },
+    ],
+  };
+
+  // 4. Clientes per Tipo
+  const clientesTipoCounts: Record<string, number> = {};
+  clientes.forEach((c) => {
+    const tipo = c.tipo || 'Sin especificar';
+    clientesTipoCounts[tipo] = (clientesTipoCounts[tipo] || 0) + 1;
+  });
+
+  const pieChartClientesData = Object.keys(clientesTipoCounts).map((key, index) => {
+    const colors = ['#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#10b981'];
+    return {
+      name: key,
+      population: clientesTipoCounts[key],
+      color: colors[index % colors.length],
+      legendFontColor: '#374151',
+      legendFontSize: 12,
+    };
+  });
+
+  // 5. Lotes per Variedad (Top 5)
+  const lotesVariedadCounts: Record<string, number> = {};
+  lotesCampo.forEach((l) => {
+    const v = variedades.find((v) => v.variedad_id === l.variedad_id);
+    const name = v ? v.nombre_comercial : 'Desconocida';
+    lotesVariedadCounts[name] = (lotesVariedadCounts[name] || 0) + 1;
+  });
+
+  const pieChartLotesData = Object.keys(lotesVariedadCounts)
+    .map((key, index) => {
+      const colors = ['#3b82f6', '#ef4444', '#eab308', '#22c55e', '#a855f7', '#ec4899'];
+      return {
+        name: key,
+        population: lotesVariedadCounts[key],
+        color: colors[index % colors.length],
+        legendFontColor: '#374151',
+        legendFontSize: 12,
+      };
+    })
+    .sort((a, b) => b.population - a.population)
+    .slice(0, 5);
+
+  const screenWidth = Dimensions.get('window').width;
+  const chartConfig = {
+    backgroundGradientFrom: '#ffffff',
+    backgroundGradientTo: '#ffffff',
+    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`, // Blue
+    strokeWidth: 2,
+    barPercentage: 0.7,
+    decimalPlaces: 0,
+    labelColor: (opacity = 1) => `rgba(55, 65, 81, ${opacity})`,
+  };
 
   return (
     <View style={styles.sectionContainer}>
@@ -379,7 +521,131 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
           </Text>
           <Text style={styles.kpiHint}>Material genético</Text>
         </View>
+
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Plantas</Text>
+          <Text style={styles.kpiValue}>
+            {totalPlantas > 0 ? totalPlantas : '—'}
+          </Text>
+          <Text style={styles.kpiHint}>Procesamiento</Text>
+        </View>
+
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Clientes</Text>
+          <Text style={styles.kpiValue}>
+            {totalClientes > 0 ? totalClientes : '—'}
+          </Text>
+          <Text style={styles.kpiHint}>Comercial</Text>
+        </View>
+
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Lotes Campo</Text>
+          <Text style={styles.kpiValue}>
+            {totalLotes > 0 ? totalLotes : '—'}
+          </Text>
+          <Text style={styles.kpiHint}>Producción</Text>
+        </View>
       </View>
+
+      {/* Charts Section */}
+      {!isLoading && (
+        <>
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Municipios por Departamento (Top 5)</Text>
+            {topDeptos.length > 0 ? (
+              <BarChart
+                data={barChartData}
+                width={screenWidth - 48} // Padding adjustments
+                height={220}
+                yAxisLabel=""
+                yAxisSuffix=""
+                chartConfig={chartConfig}
+                verticalLabelRotation={0}
+                fromZero
+                showValuesOnTopOfBars
+              />
+            ) : (
+              <Text style={styles.emptyText}>Sin datos suficientes.</Text>
+            )}
+          </View>
+
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Variedades por Aptitud</Text>
+            {pieChartData.length > 0 ? (
+              <PieChart
+                data={pieChartData}
+                width={screenWidth - 48}
+                height={220}
+                chartConfig={chartConfig}
+                accessor={'population'}
+                backgroundColor={'transparent'}
+                paddingLeft={'15'}
+                center={[0, 0]}
+                absolute
+              />
+            ) : (
+              <Text style={styles.emptyText}>Sin datos de variedades.</Text>
+            )}
+          </View>
+
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Plantas por Municipio (Top 5)</Text>
+            {topMunisPlantas.length > 0 ? (
+              <BarChart
+                data={barChartPlantasData}
+                width={screenWidth - 48}
+                height={220}
+                yAxisLabel=""
+                yAxisSuffix=""
+                chartConfig={chartConfig}
+                verticalLabelRotation={0}
+                fromZero
+                showValuesOnTopOfBars
+              />
+            ) : (
+              <Text style={styles.emptyText}>Sin datos de plantas.</Text>
+            )}
+          </View>
+
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Clientes por Tipo</Text>
+            {pieChartClientesData.length > 0 ? (
+              <PieChart
+                data={pieChartClientesData}
+                width={screenWidth - 48}
+                height={220}
+                chartConfig={chartConfig}
+                accessor={'population'}
+                backgroundColor={'transparent'}
+                paddingLeft={'15'}
+                center={[0, 0]}
+                absolute
+              />
+            ) : (
+              <Text style={styles.emptyText}>Sin datos de clientes.</Text>
+            )}
+          </View>
+
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Lotes por Variedad (Top 5)</Text>
+            {pieChartLotesData.length > 0 ? (
+              <PieChart
+                data={pieChartLotesData}
+                width={screenWidth - 48}
+                height={220}
+                chartConfig={chartConfig}
+                accessor={'population'}
+                backgroundColor={'transparent'}
+                paddingLeft={'15'}
+                center={[0, 0]}
+                absolute
+              />
+            ) : (
+              <Text style={styles.emptyText}>Sin datos de lotes.</Text>
+            )}
+          </View>
+        </>
+      )}
 
       <View style={styles.textBlock}>
         <Text style={styles.textBlockTitle}>Bienvenido</Text>
@@ -1377,6 +1643,28 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 20,
     fontStyle: 'italic',
+  },
+  // --- Charts ---
+  chartCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+    alignItems: 'center',
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+    width: '100%',
   },
 });
 
