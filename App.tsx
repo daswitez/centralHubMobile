@@ -399,7 +399,18 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
     setLocalErrorMessage(null);
 
     try {
-      if (editingId === null) {
+      // Log de depuración para verificar qué ID se está usando al guardar
+      // y confirmar si estamos en modo creación o edición.
+      // Esto se verá en la consola de Metro / Expo.
+      // eslint-disable-next-line no-console
+      console.log('[handleSubmitDepartamento]', {
+        editingId,
+        editingIdType: typeof editingId,
+        nombre: trimmedName,
+      });
+
+      // Si no hay id válido (> 0), asumimos que es un alta (create)
+      if (!editingId || editingId <= 0) {
         await createDepartamento(trimmedName);
       } else {
         await updateDepartamento(editingId, trimmedName);
@@ -420,7 +431,7 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
   };
 
   const handleEditDepartamento = (item: Departamento) => {
-    setEditingId(item.id);
+    setEditingId(item.departamento_id);
     setFormNombre(item.nombre);
     setLocalErrorMessage(null);
   };
@@ -566,11 +577,11 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
 
       {hasData && (
       <View style={styles.listCard}>
-        {departamentos.map((item) => (
-          <View key={item.id} style={styles.listRow}>
+        {departamentos.map((item, index) => (
+          <View key={`${item.departamento_id}-${index}`} style={styles.listRow}>
             <Text style={styles.listRowPrimary}>{item.nombre}</Text>
             <Text style={styles.listRowSecondary}>
-              ID: {item.id} · Registro de departamento
+              ID: {item.departamento_id} · Registro de departamento
             </Text>
             <View style={styles.actionsRow}>
               <TouchableOpacity
@@ -581,7 +592,7 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
                 <Text style={styles.linkButtonText}>Editar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleDeleteDepartamento(item.id)}
+                onPress={() => handleDeleteDepartamento(item.departamento_id)}
                 disabled={isSaving}
                 style={styles.linkButtonDanger}
               >
@@ -648,7 +659,7 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
         nombre: trimmedName,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createMunicipio(payload);
       } else {
         await updateMunicipio(editingId, payload);
@@ -670,7 +681,7 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
   };
 
   const handleEditMunicipio = (item: Municipio) => {
-    setEditingId(item.id);
+    setEditingId(item.municipio_id);
     setFormNombre(item.nombre);
     setFormDepartamentoId(String(item.departamento_id));
     setLocalErrorMessage(null);
@@ -787,8 +798,8 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
 
       {hasData && (
       <View style={styles.listCard}>
-        {municipios.map((item) => (
-          <View key={item.id} style={styles.listRow}>
+        {municipios.map((item, index) => (
+          <View key={`${item.municipio_id}-${index}`} style={styles.listRow}>
             <Text style={styles.listRowPrimary}>{item.nombre}</Text>
             <Text style={styles.listRowSecondary}>
               Departamento ID: {item.departamento_id}
@@ -802,7 +813,7 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
                 <Text style={styles.linkButtonText}>Editar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleDeleteMunicipio(item.id)}
+                onPress={() => handleDeleteMunicipio(item.municipio_id)}
                 disabled={isSaving}
                 style={styles.linkButtonDanger}
               >
@@ -885,7 +896,7 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
         ciclo_dias_max: cicloMax,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createVariedad(payload);
       } else {
         await updateVariedad(editingId, payload);
@@ -968,8 +979,8 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
 
       {hasData && (
       <View style={styles.listCard}>
-        {variedades.map((item) => (
-          <View key={item.variedad_id} style={styles.listRow}>
+        {variedades.map((item, index) => (
+          <View key={`${item.variedad_id}-${index}`} style={styles.listRow}>
             <Text style={styles.listRowPrimary}>
               {item.codigo_variedad} — {item.nombre_comercial}
             </Text>

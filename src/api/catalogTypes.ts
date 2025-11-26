@@ -21,7 +21,7 @@
 // -----------------------------------------
 export type Departamento = {
   // Identificador único en la base de datos.
-  id: number;
+  departamento_id: number;
   // Nombre del departamento (ej. "Cochabamba").
   nombre: string;
   // Timestamps estándar de Laravel (opcionales).
@@ -34,7 +34,7 @@ export type Departamento = {
 // -----------------------------------------
 export type Municipio = {
   // Identificador único del municipio.
-  id: number;
+  municipio_id: number;
   // Relación con el catálogo de departamentos.
   departamento_id: number;
   // Nombre del municipio (ej. "Sacaba").

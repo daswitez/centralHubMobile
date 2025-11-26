@@ -126,7 +126,7 @@ export const PlantasScreen: React.FC = () => {
         direccion: formDireccion.trim() || null,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createPlanta(payload);
       } else {
         await updatePlanta(editingId, payload);
@@ -233,144 +233,140 @@ export const PlantasScreen: React.FC = () => {
             </View>
           </View>
         )}
-      />
-
-      {/* Formulario de alta/edición de planta */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 16,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          backgroundColor: '#F9FAFB',
-          padding: 12,
-        }}
-      >
-        <Text
-          style={{
-            marginBottom: 8,
-            color: '#111827',
-            fontSize: 14,
-            fontWeight: '600',
-          }}
-        >
-          {editingId === null ? 'Nueva planta' : 'Editar planta'}
-        </Text>
-
-        <TextInput
-          value={formCodigoPlanta}
-          onChangeText={setFormCodigoPlanta}
-          placeholder="Código de planta"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formNombre}
-          onChangeText={setFormNombre}
-          placeholder="Nombre de la planta"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formMunicipioId}
-          onChangeText={setFormMunicipioId}
-          placeholder="Municipio ID (número)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formDireccion}
-          onChangeText={setFormDireccion}
-          placeholder="Dirección (opcional)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handleSubmitPlanta}
-            disabled={isSaving}
+        formComponent={
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              backgroundColor: '#111827',
-              opacity: isSaving ? 0.7 : 1,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              backgroundColor: '#F9FAFB',
+              padding: 12,
             }}
           >
             <Text
-              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
-            >
-              {editingId === null ? 'Crear' : 'Guardar cambios'}
-            </Text>
-          </TouchableOpacity>
-
-          {editingId !== null && (
-            <TouchableOpacity
-              onPress={handleCancelEditPlanta}
-              disabled={isSaving}
               style={{
-                paddingVertical: 8,
-                paddingHorizontal: 12,
+                marginBottom: 8,
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '600',
+              }}
+            >
+              {editingId === null ? 'Nueva planta' : 'Editar planta'}
+            </Text>
+
+            <TextInput
+              value={formCodigoPlanta}
+              onChangeText={setFormCodigoPlanta}
+              placeholder="Código de planta"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formNombre}
+              onChangeText={setFormNombre}
+              placeholder="Nombre de la planta"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formMunicipioId}
+              onChangeText={setFormMunicipioId}
+              placeholder="Municipio ID (número)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formDireccion}
+              onChangeText={setFormDireccion}
+              placeholder="Dirección (opcional)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 8,
+                marginTop: 4,
               }}
             >
-              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={handleSubmitPlanta}
+                disabled={isSaving}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#111827',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+                >
+                  {editingId === null ? 'Crear' : 'Guardar cambios'}
+                </Text>
+              </TouchableOpacity>
+
+              {editingId !== null && (
+                <TouchableOpacity
+                  onPress={handleCancelEditPlanta}
+                  disabled={isSaving}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderWidth: 1,
+                    borderColor: '#D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -443,7 +439,7 @@ export const ClientesScreen: React.FC = () => {
         direccion: formDireccion.trim() || null,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createCliente(payload);
       } else {
         await updateCliente(editingId, payload);
@@ -555,161 +551,157 @@ export const ClientesScreen: React.FC = () => {
             </View>
           </View>
         )}
-      />
-
-      {/* Formulario de alta/edición de cliente */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 16,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          backgroundColor: '#F9FAFB',
-          padding: 12,
-        }}
-      >
-        <Text
-          style={{
-            marginBottom: 8,
-            color: '#111827',
-            fontSize: 14,
-            fontWeight: '600',
-          }}
-        >
-          {editingId === null ? 'Nuevo cliente' : 'Editar cliente'}
-        </Text>
-
-        <TextInput
-          value={formCodigo}
-          onChangeText={setFormCodigo}
-          placeholder="Código de cliente"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formNombre}
-          onChangeText={setFormNombre}
-          placeholder="Nombre del cliente"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formTipo}
-          onChangeText={setFormTipo}
-          placeholder="Tipo (MAYORISTA, RETAIL, etc.)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formMunicipioId}
-          onChangeText={setFormMunicipioId}
-          placeholder="Municipio ID (opcional)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formDireccion}
-          onChangeText={setFormDireccion}
-          placeholder="Dirección (opcional)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handleSubmitCliente}
-            disabled={isSaving}
+        formComponent={
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              backgroundColor: '#111827',
-              opacity: isSaving ? 0.7 : 1,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              backgroundColor: '#F9FAFB',
+              padding: 12,
             }}
           >
             <Text
-              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
-            >
-              {editingId === null ? 'Crear' : 'Guardar cambios'}
-            </Text>
-          </TouchableOpacity>
-
-          {editingId !== null && (
-            <TouchableOpacity
-              onPress={handleCancelEditCliente}
-              disabled={isSaving}
               style={{
-                paddingVertical: 8,
-                paddingHorizontal: 12,
+                marginBottom: 8,
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '600',
+              }}
+            >
+              {editingId === null ? 'Nuevo cliente' : 'Editar cliente'}
+            </Text>
+
+            <TextInput
+              value={formCodigo}
+              onChangeText={setFormCodigo}
+              placeholder="Código de cliente"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formNombre}
+              onChangeText={setFormNombre}
+              placeholder="Nombre del cliente"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formTipo}
+              onChangeText={setFormTipo}
+              placeholder="Tipo (MAYORISTA, RETAIL, etc.)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formMunicipioId}
+              onChangeText={setFormMunicipioId}
+              placeholder="Municipio ID (opcional)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formDireccion}
+              onChangeText={setFormDireccion}
+              placeholder="Dirección (opcional)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 8,
+                marginTop: 4,
               }}
             >
-              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={handleSubmitCliente}
+                disabled={isSaving}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#111827',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+                >
+                  {editingId === null ? 'Crear' : 'Guardar cambios'}
+                </Text>
+              </TouchableOpacity>
+
+              {editingId !== null && (
+                <TouchableOpacity
+                  onPress={handleCancelEditCliente}
+                  disabled={isSaving}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderWidth: 1,
+                    borderColor: '#D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -767,7 +759,7 @@ export const TransportistasScreen: React.FC = () => {
         nro_licencia: formLicencia.trim() || null,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createTransportista(payload);
       } else {
         await updateTransportista(editingId, payload);
@@ -872,126 +864,122 @@ export const TransportistasScreen: React.FC = () => {
             </View>
           </View>
         )}
-      />
-
-      {/* Formulario alta/edición transportista */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 16,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          backgroundColor: '#F9FAFB',
-          padding: 12,
-        }}
-      >
-        <Text
-          style={{
-            marginBottom: 8,
-            color: '#111827',
-            fontSize: 14,
-            fontWeight: '600',
-          }}
-        >
-          {editingId === null ? 'Nuevo transportista' : 'Editar transportista'}
-        </Text>
-
-        <TextInput
-          value={formCodigo}
-          onChangeText={setFormCodigo}
-          placeholder="Código de transportista"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formNombre}
-          onChangeText={setFormNombre}
-          placeholder="Nombre o razón social"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formLicencia}
-          onChangeText={setFormLicencia}
-          placeholder="Nº de licencia (opcional)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handleSubmitTransportista}
-            disabled={isSaving}
+        formComponent={
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              backgroundColor: '#111827',
-              opacity: isSaving ? 0.7 : 1,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              backgroundColor: '#F9FAFB',
+              padding: 12,
             }}
           >
             <Text
-              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
-            >
-              {editingId === null ? 'Crear' : 'Guardar cambios'}
-            </Text>
-          </TouchableOpacity>
-
-          {editingId !== null && (
-            <TouchableOpacity
-              onPress={handleCancelEditTransportista}
-              disabled={isSaving}
               style={{
-                paddingVertical: 8,
-                paddingHorizontal: 12,
+                marginBottom: 8,
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '600',
+              }}
+            >
+              {editingId === null ? 'Nuevo transportista' : 'Editar transportista'}
+            </Text>
+
+            <TextInput
+              value={formCodigo}
+              onChangeText={setFormCodigo}
+              placeholder="Código de transportista"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formNombre}
+              onChangeText={setFormNombre}
+              placeholder="Nombre o razón social"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formLicencia}
+              onChangeText={setFormLicencia}
+              placeholder="Nº de licencia (opcional)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 8,
+                marginTop: 4,
               }}
             >
-              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={handleSubmitTransportista}
+                disabled={isSaving}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#111827',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+                >
+                  {editingId === null ? 'Crear' : 'Guardar cambios'}
+                </Text>
+              </TouchableOpacity>
+
+              {editingId !== null && (
+                <TouchableOpacity
+                  onPress={handleCancelEditTransportista}
+                  disabled={isSaving}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderWidth: 1,
+                    borderColor: '#D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -1060,7 +1048,7 @@ export const AlmacenesScreen: React.FC = () => {
         direccion: formDireccion.trim() || null,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createAlmacen(payload);
       } else {
         await updateAlmacen(editingId, payload);
@@ -1165,144 +1153,140 @@ export const AlmacenesScreen: React.FC = () => {
             </View>
           </View>
         )}
-      />
-
-      {/* Formulario alta/edición almacén */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 16,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          backgroundColor: '#F9FAFB',
-          padding: 12,
-        }}
-      >
-        <Text
-          style={{
-            marginBottom: 8,
-            color: '#111827',
-            fontSize: 14,
-            fontWeight: '600',
-          }}
-        >
-          {editingId === null ? 'Nuevo almacén' : 'Editar almacén'}
-        </Text>
-
-        <TextInput
-          value={formCodigo}
-          onChangeText={setFormCodigo}
-          placeholder="Código de almacén"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formNombre}
-          onChangeText={setFormNombre}
-          placeholder="Nombre del almacén"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formMunicipioId}
-          onChangeText={setFormMunicipioId}
-          placeholder="Municipio ID (número)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formDireccion}
-          onChangeText={setFormDireccion}
-          placeholder="Dirección (opcional)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handleSubmitAlmacen}
-            disabled={isSaving}
+        formComponent={
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              backgroundColor: '#111827',
-              opacity: isSaving ? 0.7 : 1,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              backgroundColor: '#F9FAFB',
+              padding: 12,
             }}
           >
             <Text
-              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
-            >
-              {editingId === null ? 'Crear' : 'Guardar cambios'}
-            </Text>
-          </TouchableOpacity>
-
-          {editingId !== null && (
-            <TouchableOpacity
-              onPress={handleCancelEditAlmacen}
-              disabled={isSaving}
               style={{
-                paddingVertical: 8,
-                paddingHorizontal: 12,
+                marginBottom: 8,
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '600',
+              }}
+            >
+              {editingId === null ? 'Nuevo almacén' : 'Editar almacén'}
+            </Text>
+
+            <TextInput
+              value={formCodigo}
+              onChangeText={setFormCodigo}
+              placeholder="Código de almacén"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formNombre}
+              onChangeText={setFormNombre}
+              placeholder="Nombre del almacén"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formMunicipioId}
+              onChangeText={setFormMunicipioId}
+              placeholder="Municipio ID (número)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formDireccion}
+              onChangeText={setFormDireccion}
+              placeholder="Dirección (opcional)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 8,
+                marginTop: 4,
               }}
             >
-              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={handleSubmitAlmacen}
+                disabled={isSaving}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#111827',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+                >
+                  {editingId === null ? 'Crear' : 'Guardar cambios'}
+                </Text>
+              </TouchableOpacity>
+
+              {editingId !== null && (
+                <TouchableOpacity
+                  onPress={handleCancelEditAlmacen}
+                  disabled={isSaving}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderWidth: 1,
+                    borderColor: '#D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -1371,7 +1355,7 @@ export const ProductoresScreen: React.FC = () => {
         telefono: formTelefono.trim() || null,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createProductor(payload);
       } else {
         await updateProductor(editingId, payload);
@@ -1474,144 +1458,140 @@ export const ProductoresScreen: React.FC = () => {
             </View>
           </View>
         )}
-      />
-
-      {/* Formulario alta/edición productor */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 16,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          backgroundColor: '#F9FAFB',
-          padding: 12,
-        }}
-      >
-        <Text
-          style={{
-            marginBottom: 8,
-            color: '#111827',
-            fontSize: 14,
-            fontWeight: '600',
-          }}
-        >
-          {editingId === null ? 'Nuevo productor' : 'Editar productor'}
-        </Text>
-
-        <TextInput
-          value={formCodigo}
-          onChangeText={setFormCodigo}
-          placeholder="Código de productor"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formNombre}
-          onChangeText={setFormNombre}
-          placeholder="Nombre del productor"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formMunicipioId}
-          onChangeText={setFormMunicipioId}
-          placeholder="Municipio ID (número)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formTelefono}
-          onChangeText={setFormTelefono}
-          placeholder="Teléfono (opcional)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handleSubmitProductor}
-            disabled={isSaving}
+        formComponent={
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              backgroundColor: '#111827',
-              opacity: isSaving ? 0.7 : 1,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              backgroundColor: '#F9FAFB',
+              padding: 12,
             }}
           >
             <Text
-              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
-            >
-              {editingId === null ? 'Crear' : 'Guardar cambios'}
-            </Text>
-          </TouchableOpacity>
-
-          {editingId !== null && (
-            <TouchableOpacity
-              onPress={handleCancelEditProductor}
-              disabled={isSaving}
               style={{
-                paddingVertical: 8,
-                paddingHorizontal: 12,
+                marginBottom: 8,
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '600',
+              }}
+            >
+              {editingId === null ? 'Nuevo productor' : 'Editar productor'}
+            </Text>
+
+            <TextInput
+              value={formCodigo}
+              onChangeText={setFormCodigo}
+              placeholder="Código de productor"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formNombre}
+              onChangeText={setFormNombre}
+              placeholder="Nombre del productor"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formMunicipioId}
+              onChangeText={setFormMunicipioId}
+              placeholder="Municipio ID (número)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formTelefono}
+              onChangeText={setFormTelefono}
+              placeholder="Teléfono (opcional)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 8,
+                marginTop: 4,
               }}
             >
-              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={handleSubmitProductor}
+                disabled={isSaving}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#111827',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+                >
+                  {editingId === null ? 'Crear' : 'Guardar cambios'}
+                </Text>
+              </TouchableOpacity>
+
+              {editingId !== null && (
+                <TouchableOpacity
+                  onPress={handleCancelEditProductor}
+                  disabled={isSaving}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderWidth: 1,
+                    borderColor: '#D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -1691,7 +1671,7 @@ export const LotesCampoScreen: React.FC = () => {
         fecha_siembra: fechaSiembra,
       };
 
-      if (editingId === null) {
+      if (!editingId) {
         await createLoteCampo(payload);
       } else {
         await updateLoteCampo(editingId, payload);
@@ -1797,163 +1777,159 @@ export const LotesCampoScreen: React.FC = () => {
             </View>
           </View>
         )}
-      />
-
-      {/* Formulario alta/edición lote de campo */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 16,
-          borderWidth: 1,
-          borderColor: '#E5E7EB',
-          backgroundColor: '#F9FAFB',
-          padding: 12,
-        }}
-      >
-        <Text
-          style={{
-            marginBottom: 8,
-            color: '#111827',
-            fontSize: 14,
-            fontWeight: '600',
-          }}
-        >
-          {editingId === null ? 'Nuevo lote de campo' : 'Editar lote de campo'}
-        </Text>
-
-        <TextInput
-          value={formCodigo}
-          onChangeText={setFormCodigo}
-          placeholder="Código de lote de campo"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formProductorId}
-          onChangeText={setFormProductorId}
-          placeholder="Productor ID (número)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formVariedadId}
-          onChangeText={setFormVariedadId}
-          placeholder="Variedad ID (número)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formSuperficie}
-          onChangeText={setFormSuperficie}
-          placeholder="Superficie (ha)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <TextInput
-          value={formFechaSiembra}
-          onChangeText={setFormFechaSiembra}
-          placeholder="Fecha siembra (YYYY-MM-DD)"
-          placeholderTextColor="#9CA3AF"
-          style={{
-            marginBottom: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: '#D1D5DB',
-            backgroundColor: '#FFFFFF',
-            color: '#111827',
-            fontSize: 13,
-          }}
-        />
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={handleSubmitLoteCampo}
-            disabled={isSaving}
+        formComponent={
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              backgroundColor: '#111827',
-              opacity: isSaving ? 0.7 : 1,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              backgroundColor: '#F9FAFB',
+              padding: 12,
             }}
           >
             <Text
-              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
-            >
-              {editingId === null ? 'Crear' : 'Guardar cambios'}
-            </Text>
-          </TouchableOpacity>
-
-          {editingId !== null && (
-            <TouchableOpacity
-              onPress={handleCancelEditLoteCampo}
-              disabled={isSaving}
               style={{
-                paddingVertical: 8,
-                paddingHorizontal: 12,
+                marginBottom: 8,
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '600',
+              }}
+            >
+              {editingId === null ? 'Nuevo lote de campo' : 'Editar lote de campo'}
+            </Text>
+
+            <TextInput
+              value={formCodigo}
+              onChangeText={setFormCodigo}
+              placeholder="Código de lote de campo"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formProductorId}
+              onChangeText={setFormProductorId}
+              placeholder="Productor ID (número)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formVariedadId}
+              onChangeText={setFormVariedadId}
+              placeholder="Variedad ID (número)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formSuperficie}
+              onChangeText={setFormSuperficie}
+              placeholder="Superficie (ha)"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <TextInput
+              value={formFechaSiembra}
+              onChangeText={setFormFechaSiembra}
+              placeholder="Fecha siembra (YYYY-MM-DD)"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                marginBottom: 8,
+                paddingVertical: 6,
+                paddingHorizontal: 8,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+                color: '#111827',
+                fontSize: 13,
+              }}
+            />
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 8,
+                marginTop: 4,
               }}
             >
-              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <TouchableOpacity
+                onPress={handleSubmitLoteCampo}
+                disabled={isSaving}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: '#111827',
+                  opacity: isSaving ? 0.7 : 1,
+                }}
+              >
+                <Text
+                  style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+                >
+                  {editingId === null ? 'Crear' : 'Guardar cambios'}
+                </Text>
+              </TouchableOpacity>
+
+              {editingId !== null && (
+                <TouchableOpacity
+                  onPress={handleCancelEditLoteCampo}
+                  disabled={isSaving}
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderWidth: 1,
+                    borderColor: '#D1D5DB',
+                    backgroundColor: '#FFFFFF',
+                  }}
+                >
+                  <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };

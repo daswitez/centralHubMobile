@@ -30,6 +30,8 @@ export type CatalogListScreenProps<TItem> = {
   errorMessage: string | null;
   items: TItem[];
   renderRow: (item: TItem) => React.ReactNode;
+  /** Componente de formulario opcional para crear/editar (se renderiza arriba). */
+  formComponent?: React.ReactNode;
 };
 
 export const CatalogListScreen = <TItem,>({
@@ -43,6 +45,7 @@ export const CatalogListScreen = <TItem,>({
   errorMessage,
   items,
   renderRow,
+  formComponent,
 }: CatalogListScreenProps<TItem>) => {
   const hasItems = items.length > 0;
 
@@ -76,6 +79,13 @@ export const CatalogListScreen = <TItem,>({
         <Text style={{ color: '#6B7280', fontSize: 13, marginBottom: 12 }}>
           {subtitle}
         </Text>
+
+        {/* Renderizamos el formulario aquí si existe */}
+        {formComponent && (
+          <View style={{ marginBottom: 16 }}>
+            {formComponent}
+          </View>
+        )}
 
         <View
           style={{
