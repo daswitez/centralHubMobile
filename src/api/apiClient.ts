@@ -13,11 +13,13 @@
 // -----------------------------------------
 
 // URL base del backend Laravel para centralHub.
-// En simulador iOS/Android puedes usar 127.0.0.1,
-// pero en un iPhone físico deberás cambiar esto
-// por la IP local de tu PC, por ejemplo:
-//   http://192.168.0.10:8000
-export const API_BASE_URL = 'http://127.0.0.1:8000';
+// IMPORTANTE:
+//  - En emulador Android: usa http://10.0.2.2:8000
+//  - En emulador iOS:     http://127.0.0.1:8000
+//  - En iPhone físico:    usa la IP local de tu PC
+//                         (por ejemplo http://192.168.0.10:8000)
+// Ajusta la constante de abajo con la IP de tu máquina.
+export const API_BASE_URL = 'http://192.168.1.23:8000';
 
 // -----------------------------------------
 // Tipo de error estándar para respuestas HTTP

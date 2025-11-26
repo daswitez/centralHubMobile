@@ -17,6 +17,8 @@
 
 import { handleApiRequest } from './apiClient';
 import type { Departamento } from './catalogTypes';
+import type { ApiEnvelope, ApiListEnvelope } from './apiTypes';
+import { extractListFromEnvelope } from './apiTypes';
 
 // -----------------------------------------
 // 1) Listar departamentos con filtro opcional
@@ -33,14 +35,17 @@ export const getDepartamentos = async (
   const query = searchText ? `?q=${encodeURIComponent(searchText)}` : '';
 
   // Hacemos un GET al endpoint de index de departamentos.
-  const departamentos = await handleApiRequest<Departamento[]>(
+  // El backend devuelve un envoltorio { status, message, data }.
+  const response = await handleApiRequest<ApiListEnvelope<Departamento>>(
     `/cat/departamentos${query}`,
     {
       method: 'GET',
     }
   );
 
-  // Devolvemos la lista de departamentos tipada.
+  // Extraemos siempre un arreglo de departamentos (paginado o no).
+  const departamentos = extractListFromEnvelope<Departamento>(response);
+
   return departamentos;
 };
 
@@ -59,7 +64,8 @@ export const createDepartamento = async (
   const body = { nombre };
 
   // POST hacia el endpoint de creación de departamentos.
-  const nuevoDepartamento = await handleApiRequest<Departamento>(
+  // El backend devuelve un envoltorio con el modelo creado.
+  const response = await handleApiRequest<ApiEnvelope<Departamento>>(
     '/cat/departamentos',
     {
       method: 'POST',
@@ -68,7 +74,7 @@ export const createDepartamento = async (
   );
 
   // Devolvemos el departamento recién creado.
-  return nuevoDepartamento;
+  return response.data;
 };
 
 // -----------------------------------------
@@ -88,7 +94,7 @@ export const updateDepartamento = async (
   const body = { nombre };
 
   // PUT al endpoint específico del recurso departamento.
-  const updatedDepartamento = await handleApiRequest<Departamento>(
+  const response = await handleApiRequest<ApiEnvelope<Departamento>>(
     `/cat/departamentos/${id}`,
     {
       method: 'PUT',
@@ -97,7 +103,7 @@ export const updateDepartamento = async (
   );
 
   // Devolvemos el departamento ya actualizado.
-  return updatedDepartamento;
+  return response.data;
 };
 
 // -----------------------------------------

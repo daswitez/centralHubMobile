@@ -17,6 +17,8 @@
 
 import { handleApiRequest } from './apiClient';
 import type { Municipio } from './catalogTypes';
+import type { ApiEnvelope, ApiListEnvelope } from './apiTypes';
+import { extractListFromEnvelope } from './apiTypes';
 
 // -----------------------------------------
 // 1) Listar municipios con filtros opcionales
@@ -50,14 +52,17 @@ export const getMunicipios = async (params?: {
   const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
 
   // GET al endpoint principal de municipios.
-  const municipios = await handleApiRequest<Municipio[]>(
+  // El backend devuelve un envoltorio { status, message, data }.
+  const response = await handleApiRequest<ApiListEnvelope<Municipio>>(
     `/cat/municipios${query}`,
     {
       method: 'GET',
     }
   );
 
-  // Devolvemos la lista ya filtrada.
+  // Devolvemos la lista ya filtrada (paginada o no).
+  const municipios = extractListFromEnvelope<Municipio>(response);
+
   return municipios;
 };
 
@@ -77,7 +82,7 @@ export const createMunicipio = async (data: {
   nombre: string;
 }): Promise<Municipio> => {
   // POST con el JSON esperado por el backend.
-  const nuevoMunicipio = await handleApiRequest<Municipio>(
+  const response = await handleApiRequest<ApiEnvelope<Municipio>>(
     '/cat/municipios',
     {
       method: 'POST',
@@ -86,7 +91,7 @@ export const createMunicipio = async (data: {
   );
 
   // Devolvemos el municipio recién creado.
-  return nuevoMunicipio;
+  return response.data;
 };
 
 // -----------------------------------------
@@ -109,7 +114,7 @@ export const updateMunicipio = async (
   }
 ): Promise<Municipio> => {
   // PUT al recurso específico de municipio.
-  const updatedMunicipio = await handleApiRequest<Municipio>(
+  const response = await handleApiRequest<ApiEnvelope<Municipio>>(
     `/cat/municipios/${id}`,
     {
       method: 'PUT',
@@ -118,7 +123,7 @@ export const updateMunicipio = async (
   );
 
   // Devolvemos el municipio ya actualizado.
-  return updatedMunicipio;
+  return response.data;
 };
 
 // -----------------------------------------

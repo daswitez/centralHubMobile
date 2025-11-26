@@ -24,7 +24,7 @@ Ejemplo de archivo compartido `apiClient.ts` para toda la app:
 // -----------------------------------------
 
 // URL base del backend Laravel (cambia según tu entorno)
-export const API_BASE_URL = 'http://127.0.0.1:8000';
+export const API_BASE_URL = 'http://192.168.1.23:8000';
 
 // Tipo genérico para errores de API
 export type ApiError = {

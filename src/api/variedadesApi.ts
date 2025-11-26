@@ -17,6 +17,8 @@
 
 import { handleApiRequest } from './apiClient';
 import type { VariedadPapa } from './catalogTypes';
+import type { ApiEnvelope, ApiListEnvelope } from './apiTypes';
+import { extractListFromEnvelope } from './apiTypes';
 
 // -----------------------------------------
 // 1) Listar variedades de papa con filtro opcional
@@ -33,14 +35,17 @@ export const getVariedades = async (
   const query = searchText ? `?q=${encodeURIComponent(searchText)}` : '';
 
   // GET al endpoint principal de variedades.
-  const variedades = await handleApiRequest<VariedadPapa[]>(
+  // El backend devuelve un envoltorio { status, message, data }.
+  const response = await handleApiRequest<ApiListEnvelope<VariedadPapa>>(
     `/cat/variedades${query}`,
     {
       method: 'GET',
     }
   );
 
-  // Devolvemos las variedades obtenidas.
+  // Devolvemos las variedades obtenidas (paginadas o no).
+  const variedades = extractListFromEnvelope<VariedadPapa>(response);
+
   return variedades;
 };
 
@@ -76,7 +81,7 @@ export const createVariedad = async (
   payload: CreateVariedadPayload
 ): Promise<VariedadPapa> => {
   // POST al endpoint de creación de variedades.
-  const nuevaVariedad = await handleApiRequest<VariedadPapa>(
+  const response = await handleApiRequest<ApiEnvelope<VariedadPapa>>(
     '/cat/variedades',
     {
       method: 'POST',
@@ -85,7 +90,7 @@ export const createVariedad = async (
   );
 
   // Devolvemos la variedad ya registrada.
-  return nuevaVariedad;
+  return response.data;
 };
 
 // -----------------------------------------
@@ -109,7 +114,7 @@ export const updateVariedad = async (
   payload: UpdateVariedadPayload
 ): Promise<VariedadPapa> => {
   // PUT con el cuerpo JSON actualizado.
-  const updatedVariedad = await handleApiRequest<VariedadPapa>(
+  const response = await handleApiRequest<ApiEnvelope<VariedadPapa>>(
     `/cat/variedades/${id}`,
     {
       method: 'PUT',
@@ -118,7 +123,7 @@ export const updateVariedad = async (
   );
 
   // Devolvemos la variedad ya modificada.
-  return updatedVariedad;
+  return response.data;
 };
 
 // -----------------------------------------
