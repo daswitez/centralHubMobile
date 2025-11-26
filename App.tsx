@@ -2,16 +2,8 @@
 // App.tsx
 // -----------------------------------------
 // Componente raíz de la aplicación móvil centralHub.
-// Muestra un dashboard principal con un layout inspirado
-// en AdminLTE adaptado a móvil:
-//  - Fondo gris claro tipo panel de administración.
-//  - Menú vertical oscuro a la izquierda para navegar
-//    entre secciones (Dashboard, Departamentos, Municipios,
-//    Variedades).
-//  - Zona de contenido a la derecha con tarjetas claras
-//    y pequeñas secciones tipo "card" al estilo AdminLTE.
-// Se conecta a los módulos de API (departamentos, municipios,
-// variedades) para mostrar datos reales del backend Laravel.
+// Refactorizado para usar un Menú Hamburguesa (Drawer)
+// y maximizar el espacio de contenido.
 // -----------------------------------------
 
 import React, { useEffect, useState } from 'react';
@@ -25,7 +17,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Dimensions,
+  Platform,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 // Tipos y módulos de API para catálogos base.
 import type {
@@ -63,12 +58,20 @@ import {
   LecturasScreen,
 } from './src/screens/CatalogScreens';
 
+import {
+  RegistrarLotePlantaScreen,
+  RegistrarLoteSalidaScreen,
+} from './src/screens/TxPlantaScreens';
+
+import {
+  DespacharAlmacenScreen,
+  RecepcionarEnvioScreen,
+  DespacharClienteScreen,
+} from './src/screens/TxAlmacenScreens';
+
 // -----------------------------------------
 // Tipo de sección para el menú lateral
 // -----------------------------------------
-// Define las llaves disponibles en el dashboard
-// para poder cambiar entre vistas usando un
-// simple estado local.
 type SectionKey =
   | 'dashboard'
   | 'departamentos'
@@ -80,15 +83,20 @@ type SectionKey =
   | 'almacenes'
   | 'productores'
   | 'lotesCampo'
-  | 'lecturas';
+  | 'lecturas'
+  | 'txRegistrarLotePlanta'
+  | 'txRegistrarLoteSalida'
+  | 'txDespacharAlmacen'
+  | 'txRecepcionarEnvio'
+  | 'txDespacharCliente';
 
 // -----------------------------------------
 // Componente principal de la app
 // -----------------------------------------
 const App: React.FC = () => {
-  // Estado que indica qué sección del dashboard
-  // está activa en este momento.
+  // Estado de navegación
   const [activeSection, setActiveSection] = useState<SectionKey>('dashboard');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Estado con los catálogos cargados desde el backend.
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
@@ -104,10 +112,14 @@ const App: React.FC = () => {
   // Handler para cambiar de sección desde el menú lateral.
   const handleChangeSection = (section: SectionKey) => {
     setActiveSection(section);
+    setIsMenuOpen(false); // Cerrar menú al navegar
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   // Handler que carga todos los catálogos en paralelo
-  // utilizando los módulos de API.
   const handleLoadCatalogs = async () => {
     setIsLoadingCatalogs(true);
     setCatalogsErrorMessage(null);
@@ -130,15 +142,12 @@ const App: React.FC = () => {
       setCatalogsErrorMessage(
         'No se pudieron cargar los catálogos desde el backend.'
       );
-      // Log técnico para depuración en consola de Metro.
-      // eslint-disable-next-line no-console
       console.error('Error cargando catálogos:', error);
     } finally {
       setIsLoadingCatalogs(false);
     }
   };
 
-  // Cargamos los catálogos al iniciar la app.
   useEffect(() => {
     void handleLoadCatalogs();
   }, []);
@@ -168,101 +177,135 @@ const App: React.FC = () => {
     );
   };
 
-  // Render principal: layout en dos columnas
-  // (menú vertical + área de contenido).
   return (
     <SafeAreaView style={styles.root}>
-      <View style={styles.layoutRow}>
-        {/* Menú lateral vertical (similar a sidebar web) */}
-        <View style={styles.sideMenu}>
-          {/* Branding minimalista centralHub */}
-          <Text style={styles.appTitle}>centralHub</Text>
-          <Text style={styles.appSubtitle}>Control panel</Text>
-
-          {/* Separador visual */}
-          <View style={styles.menuDivider} />
-
-          {/* Opciones de navegación - catálogos base */}
-          {renderMenuItem('dashboard', 'Dashboard')}
-          {renderMenuItem('departamentos', 'Departamentos')}
-          {renderMenuItem('municipios', 'Municipios')}
-          {renderMenuItem('variedades', 'Variedades')}
-
-          {/* Separador de grupo */}
-          <View style={styles.menuDivider} />
-
-          {/* Catálogos extendidos */}
-          {renderMenuItem('plantas', 'Plantas')}
-          {renderMenuItem('clientes', 'Clientes')}
-          {renderMenuItem('transportistas', 'Transportistas')}
-          {renderMenuItem('almacenes', 'Almacenes')}
-
-          {/* Separador de grupo */}
-          <View style={styles.menuDivider} />
-
-          {/* Campo */}
-          {renderMenuItem('productores', 'Productores')}
-          {renderMenuItem('lotesCampo', 'Lotes campo')}
-          {renderMenuItem('lecturas', 'Lecturas sensor')}
-        </View>
-
-        {/* Área principal de contenido */}
-        <View style={styles.contentArea}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {activeSection === 'dashboard' && (
-              <DashboardSection
-                departamentos={departamentos}
-                municipios={municipios}
-                variedades={variedades}
-                isLoading={isLoadingCatalogs}
-                errorMessage={catalogsErrorMessage}
-                onReloadCatalogs={handleLoadCatalogs}
-              />
-            )}
-
-            {activeSection === 'departamentos' && (
-              <DepartamentosSection
-                departamentos={departamentos}
-                isLoading={isLoadingCatalogs}
-                errorMessage={catalogsErrorMessage}
-                onReloadCatalogs={handleLoadCatalogs}
-              />
-            )}
-
-            {activeSection === 'municipios' && (
-              <MunicipiosSection
-                municipios={municipios}
-                isLoading={isLoadingCatalogs}
-                errorMessage={catalogsErrorMessage}
-                onReloadCatalogs={handleLoadCatalogs}
-              />
-            )}
-
-            {activeSection === 'variedades' && (
-              <VariedadesSection
-                variedades={variedades}
-                isLoading={isLoadingCatalogs}
-                errorMessage={catalogsErrorMessage}
-                onReloadCatalogs={handleLoadCatalogs}
-              />
-            )}
-
-            {activeSection === 'plantas' && <PlantasScreen />}
-            {activeSection === 'clientes' && <ClientesScreen />}
-            {activeSection === 'transportistas' && <TransportistasScreen />}
-            {activeSection === 'almacenes' && <AlmacenesScreen />}
-            {activeSection === 'productores' && <ProductoresScreen />}
-            {activeSection === 'lotesCampo' && <LotesCampoScreen />}
-            {activeSection === 'lecturas' && <LecturasScreen />}
-          </ScrollView>
-        </View>
+      {/* Barra Superior (Top Bar) */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={toggleMenu} style={styles.hamburgerButton}>
+          <Text style={styles.hamburgerIcon}>☰</Text>
+        </TouchableOpacity>
+        <Text style={styles.appTitleHeader}>centralHub</Text>
       </View>
 
-      {/* Barra de estado en claro sobre fondo oscuro */}
-      <StatusBar style="light" />
+      {/* Área principal de contenido (Full Width) */}
+      <View style={styles.contentArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {activeSection === 'dashboard' && (
+            <DashboardSection
+              departamentos={departamentos}
+              municipios={municipios}
+              variedades={variedades}
+              isLoading={isLoadingCatalogs}
+              errorMessage={catalogsErrorMessage}
+              onReloadCatalogs={handleLoadCatalogs}
+            />
+          )}
+
+          {activeSection === 'departamentos' && (
+            <DepartamentosSection
+              departamentos={departamentos}
+              isLoading={isLoadingCatalogs}
+              errorMessage={catalogsErrorMessage}
+              onReloadCatalogs={handleLoadCatalogs}
+            />
+          )}
+
+          {activeSection === 'municipios' && (
+            <MunicipiosSection
+              municipios={municipios}
+              departamentos={departamentos}
+              isLoading={isLoadingCatalogs}
+              errorMessage={catalogsErrorMessage}
+              onReloadCatalogs={handleLoadCatalogs}
+            />
+          )}
+
+          {activeSection === 'variedades' && (
+            <VariedadesSection
+              variedades={variedades}
+              isLoading={isLoadingCatalogs}
+              errorMessage={catalogsErrorMessage}
+              onReloadCatalogs={handleLoadCatalogs}
+            />
+          )}
+
+          {activeSection === 'plantas' && <PlantasScreen />}
+          {activeSection === 'clientes' && <ClientesScreen />}
+          {activeSection === 'transportistas' && <TransportistasScreen />}
+          {activeSection === 'almacenes' && <AlmacenesScreen />}
+          {activeSection === 'productores' && <ProductoresScreen />}
+          {activeSection === 'lotesCampo' && <LotesCampoScreen />}
+          {activeSection === 'lecturas' && <LecturasScreen />}
+
+          {activeSection === 'txRegistrarLotePlanta' && <RegistrarLotePlantaScreen />}
+          {activeSection === 'txRegistrarLoteSalida' && <RegistrarLoteSalidaScreen />}
+          {activeSection === 'txDespacharAlmacen' && <DespacharAlmacenScreen />}
+          {activeSection === 'txRecepcionarEnvio' && <RecepcionarEnvioScreen />}
+          {activeSection === 'txDespacharCliente' && <DespacharClienteScreen />}
+        </ScrollView>
+      </View>
+
+      {/* Backdrop (Fondo oscuro al abrir menú) */}
+      {isMenuOpen && (
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setIsMenuOpen(false)}
+        />
+      )}
+
+      {/* Menú Lateral (Drawer) */}
+      {isMenuOpen && (
+        <View style={styles.sideMenu}>
+          <View style={styles.menuHeader}>
+            <Text style={styles.appTitle}>centralHub</Text>
+            <Text style={styles.appSubtitle}>Control panel</Text>
+          </View>
+
+          <ScrollView style={{ flex: 1 }}>
+            {/* Opciones de navegación - catálogos base */}
+            {renderMenuItem('dashboard', 'Dashboard')}
+            {renderMenuItem('departamentos', 'Departamentos')}
+            {renderMenuItem('municipios', 'Municipios')}
+            {renderMenuItem('variedades', 'Variedades')}
+
+            <View style={styles.menuDivider} />
+
+            {/* Catálogos extendidos */}
+            {renderMenuItem('plantas', 'Plantas')}
+            {renderMenuItem('clientes', 'Clientes')}
+            {renderMenuItem('transportistas', 'Transportistas')}
+            {renderMenuItem('almacenes', 'Almacenes')}
+
+            <View style={styles.menuDivider} />
+
+            {/* Campo */}
+            {renderMenuItem('productores', 'Productores')}
+            {renderMenuItem('lotesCampo', 'Lotes campo')}
+            {renderMenuItem('lecturas', 'Lecturas sensor')}
+
+            <View style={styles.menuDivider} />
+
+            {/* Transacciones Planta */}
+            {renderMenuItem('txRegistrarLotePlanta', 'TX: Lote Planta')}
+            {renderMenuItem('txRegistrarLoteSalida', 'TX: Lote Salida')}
+
+            <View style={styles.menuDivider} />
+
+            {/* Transacciones Almacén */}
+            {renderMenuItem('txDespacharAlmacen', 'TX: Desp. Almacén')}
+            {renderMenuItem('txRecepcionarEnvio', 'TX: Recep. Envío')}
+            {renderMenuItem('txDespacharCliente', 'TX: Desp. Cliente')}
+            
+            <View style={{ height: 40 }} /> 
+          </ScrollView>
+        </View>
+      )}
+
+      <StatusBar style="dark" />
     </SafeAreaView>
   );
 };
@@ -270,9 +313,6 @@ const App: React.FC = () => {
 // -----------------------------------------
 // Sección: Dashboard principal centralHub
 // -----------------------------------------
-// Muestra un resumen general con algunos KPIs
-// ficticios, imitando el estilo de AdminLTE
-// (tarjetas claras sobre fondo gris, con KPIs).
 type DashboardSectionProps = {
   departamentos: Departamento[];
   municipios: Municipio[];
@@ -288,7 +328,6 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
   variedades,
   isLoading,
   errorMessage,
-  onReloadCatalogs,
 }) => {
   const totalDepartamentos = departamentos.length;
   const totalMunicipios = municipios.length;
@@ -296,15 +335,13 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
 
   return (
     <View style={styles.sectionContainer}>
-      {/* Cabecera de la sección */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Panel general centralHub</Text>
         <Text style={styles.sectionSubtitle}>
-          Producción · Catálogos · Logística — panel de control centralHub
+          Producción · Catálogos · Logística
         </Text>
       </View>
 
-      {/* Mensajes de carga o error globales */}
       {isLoading && (
         <View style={styles.statusRow}>
           <ActivityIndicator size="small" color="#111827" />
@@ -318,14 +355,13 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
         </View>
       )}
 
-      {/* Fila de tarjetas KPI, tipo AdminLTE pero minimalistas */}
       <View style={styles.kpiColumn}>
         <View style={styles.kpiCard}>
           <Text style={styles.kpiLabel}>Departamentos</Text>
           <Text style={styles.kpiValue}>
             {totalDepartamentos > 0 ? totalDepartamentos : '—'}
           </Text>
-          <Text style={styles.kpiHint}>Catálogo base de regiones</Text>
+          <Text style={styles.kpiHint}>Catálogo base</Text>
         </View>
 
         <View style={styles.kpiCard}>
@@ -333,26 +369,22 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
           <Text style={styles.kpiValue}>
             {totalMunicipios > 0 ? totalMunicipios : '—'}
           </Text>
-          <Text style={styles.kpiHint}>Cobertura geográfica registrada</Text>
+          <Text style={styles.kpiHint}>Cobertura</Text>
         </View>
 
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Variedades de papa</Text>
+          <Text style={styles.kpiLabel}>Variedades</Text>
           <Text style={styles.kpiValue}>
             {totalVariedades > 0 ? totalVariedades : '—'}
           </Text>
-          <Text style={styles.kpiHint}>Catálogo de materiales genéticos</Text>
+          <Text style={styles.kpiHint}>Material genético</Text>
         </View>
       </View>
 
-      {/* Bloque de descripción simple */}
       <View style={styles.textBlock}>
-        <Text style={styles.textBlockTitle}>Trazabilidad centralizada</Text>
+        <Text style={styles.textBlockTitle}>Bienvenido</Text>
         <Text style={styles.textBlockBody}>
-          CentralHub conecta catálogos, producción y logística en un solo
-          panel. Esta vista móvil resume la estructura principal: departamentos,
-          municipios y variedades de papa que se sincronizan con tu backend
-          Laravel + PostgreSQL.
+          Selecciona una opción del menú para comenzar a gestionar los registros.
         </Text>
       </View>
     </View>
@@ -362,9 +394,6 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
 // -----------------------------------------
 // Sección: Departamentos
 // -----------------------------------------
-// Presenta la lista de departamentos que llega
-// desde el backend Laravel a través del módulo
-// departamentosApi.
 type DepartamentosSectionProps = {
   departamentos: Departamento[];
   isLoading: boolean;
@@ -399,17 +428,6 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
     setLocalErrorMessage(null);
 
     try {
-      // Log de depuración para verificar qué ID se está usando al guardar
-      // y confirmar si estamos en modo creación o edición.
-      // Esto se verá en la consola de Metro / Expo.
-      // eslint-disable-next-line no-console
-      console.log('[handleSubmitDepartamento]', {
-        editingId,
-        editingIdType: typeof editingId,
-        nombre: trimmedName,
-      });
-
-      // Si no hay id válido (> 0), asumimos que es un alta (create)
       if (!editingId || editingId <= 0) {
         await createDepartamento(trimmedName);
       } else {
@@ -423,7 +441,6 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
       setLocalErrorMessage(
         'No se pudo guardar el departamento. Revisa la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando departamento:', error);
     } finally {
       setIsSaving(false);
@@ -453,7 +470,6 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
       setLocalErrorMessage(
         'No se pudo eliminar el departamento. Intenta nuevamente.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error eliminando departamento:', error);
     } finally {
       setIsSaving(false);
@@ -466,17 +482,11 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
 
     try {
       const filtered = await getDepartamentos(searchText.trim() || undefined);
-      // No recargamos catálogos globales, solo mostramos el resultado filtrado.
-      // Esto mantiene el dashboard usando el total general.
-      // Para simplificar, podríamos también refrescar globalmente si lo deseas.
-      // Aquí preferimos no tocar el estado global.
-      // eslint-disable-next-line no-console
       console.info('Departamentos filtrados localmente:', filtered.length);
     } catch (error) {
       setLocalErrorMessage(
         'No se pudieron filtrar los departamentos. Revisa tu conexión.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error filtrando departamentos:', error);
     } finally {
       setIsSaving(false);
@@ -488,7 +498,7 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Catálogo de Departamentos</Text>
         <Text style={styles.sectionSubtitle}>
-          Datos en vivo desde /cat/departamentos (Laravel)
+          /cat/departamentos
         </Text>
       </View>
 
@@ -511,7 +521,6 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
         </View>
       )}
 
-      {/* Formulario de búsqueda y alta/edición de departamento */}
       <View style={styles.formCard}>
         <Text style={styles.formTitle}>
           {editingId === null ? 'Nuevo departamento' : 'Editar departamento'}
@@ -570,8 +579,7 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
 
       {!isLoading && !hasData && !errorMessage && (
         <Text style={styles.emptyText}>
-          No se encontraron departamentos. Verifica que el backend esté
-          respondiendo.
+          No se encontraron departamentos.
         </Text>
       )}
 
@@ -581,7 +589,7 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
           <View key={`${item.departamento_id}-${index}`} style={styles.listRow}>
             <Text style={styles.listRowPrimary}>{item.nombre}</Text>
             <Text style={styles.listRowSecondary}>
-              ID: {item.departamento_id} · Registro de departamento
+              ID: {item.departamento_id}
             </Text>
             <View style={styles.actionsRow}>
               <TouchableOpacity
@@ -610,9 +618,9 @@ const DepartamentosSection: React.FC<DepartamentosSectionProps> = ({
 // -----------------------------------------
 // Sección: Municipios
 // -----------------------------------------
-// Muestra los municipios cargados desde /cat/municipios.
 type MunicipiosSectionProps = {
   municipios: Municipio[];
+  departamentos: Departamento[];
   isLoading: boolean;
   errorMessage: string | null;
   onReloadCatalogs: () => Promise<void>;
@@ -620,6 +628,7 @@ type MunicipiosSectionProps = {
 
 const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
   municipios,
+  departamentos,
   isLoading,
   errorMessage,
   onReloadCatalogs,
@@ -673,7 +682,6 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
       setLocalErrorMessage(
         'No se pudo guardar el municipio. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando municipio:', error);
     } finally {
       setIsSaving(false);
@@ -705,7 +713,6 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
       setLocalErrorMessage(
         'No se pudo eliminar el municipio. Intenta nuevamente.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error eliminando municipio:', error);
     } finally {
       setIsSaving(false);
@@ -717,7 +724,7 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Catálogo de Municipios</Text>
         <Text style={styles.sectionSubtitle}>
-          Datos en vivo desde /cat/municipios
+          /cat/municipios
         </Text>
       </View>
 
@@ -740,7 +747,6 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
         </View>
       )}
 
-      {/* Formulario de alta/edición de municipio */}
       <View style={styles.formCard}>
         <Text style={styles.formTitle}>
           {editingId === null ? 'Nuevo municipio' : 'Editar municipio'}
@@ -754,14 +760,21 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
           style={styles.textInput}
         />
 
-        <TextInput
-          value={formDepartamentoId}
-          onChangeText={setFormDepartamentoId}
-          placeholder="Departamento ID (número)"
-          placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
-          style={styles.textInput}
-        />
+        <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 12, backgroundColor: 'white' }}>
+          <Picker
+            selectedValue={formDepartamentoId}
+            onValueChange={(itemValue) => setFormDepartamentoId(itemValue)}
+          >
+            <Picker.Item label="Selecciona un departamento..." value="" />
+            {departamentos.map((d) => (
+              <Picker.Item
+                key={d.departamento_id}
+                label={d.nombre}
+                value={String(d.departamento_id)}
+              />
+            ))}
+          </Picker>
+        </View>
 
         <View style={styles.formRow}>
           <TouchableOpacity
@@ -791,8 +804,7 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
 
       {!isLoading && !hasData && !errorMessage && (
         <Text style={styles.emptyText}>
-          No se encontraron municipios. Revisa que existan registros en el
-          backend.
+          No se encontraron municipios.
         </Text>
       )}
 
@@ -802,7 +814,7 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
           <View key={`${item.municipio_id}-${index}`} style={styles.listRow}>
             <Text style={styles.listRowPrimary}>{item.nombre}</Text>
             <Text style={styles.listRowSecondary}>
-              Departamento ID: {item.departamento_id}
+              ID: {item.municipio_id} · Depto ID: {item.departamento_id}
             </Text>
             <View style={styles.actionsRow}>
               <TouchableOpacity
@@ -829,10 +841,8 @@ const MunicipiosSection: React.FC<MunicipiosSectionProps> = ({
 };
 
 // -----------------------------------------
-// Sección: Variedades de papa
+// Sección: Variedades
 // -----------------------------------------
-// Replica la idea de la VariedadesScreen de la guía,
-// pero consumiendo datos de /cat/variedades.
 type VariedadesSectionProps = {
   variedades: VariedadPapa[];
   isLoading: boolean;
@@ -847,11 +857,9 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
   onReloadCatalogs,
 }) => {
   const hasData = variedades.length > 0;
+  const [formNombre, setFormNombre] = useState<string>('');
   const [formCodigo, setFormCodigo] = useState<string>('');
-  const [formNombreComercial, setFormNombreComercial] = useState<string>('');
-  const [formAptitud, setFormAptitud] = useState<string>('');
-  const [formCicloMin, setFormCicloMin] = useState<string>('');
-  const [formCicloMax, setFormCicloMax] = useState<string>('');
+  const [formCientifico, setFormCientifico] = useState<string>('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(
@@ -859,27 +867,13 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
   );
 
   const handleSubmitVariedad = async () => {
-    const codigo = formCodigo.trim();
-    const nombreComercial = formNombreComercial.trim();
+    const trimmedName = formNombre.trim();
+    const trimmedCodigo = formCodigo.trim();
+    const trimmedCientifico = formCientifico.trim();
 
-    if (!codigo || !nombreComercial) {
+    if (!trimmedName || !trimmedCodigo) {
       setLocalErrorMessage(
-        'Código y nombre comercial son obligatorios para la variedad.'
-      );
-      return;
-    }
-
-    const cicloMin =
-      formCicloMin.trim() === '' ? null : Number(formCicloMin.trim());
-    const cicloMax =
-      formCicloMax.trim() === '' ? null : Number(formCicloMax.trim());
-
-    if (
-      (formCicloMin.trim() !== '' && Number.isNaN(cicloMin)) ||
-      (formCicloMax.trim() !== '' && Number.isNaN(cicloMax))
-    ) {
-      setLocalErrorMessage(
-        'Los campos de ciclo deben ser números o quedar vacíos.'
+        'El nombre comercial y el código de la variedad son obligatorios.'
       );
       return;
     }
@@ -889,11 +883,9 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
 
     try {
       const payload = {
-        codigo_variedad: codigo,
-        nombre_comercial: nombreComercial,
-        aptitud: formAptitud.trim() || null,
-        ciclo_dias_min: cicloMin,
-        ciclo_dias_max: cicloMax,
+        codigo_variedad: trimmedCodigo,
+        nombre_comercial: trimmedName,
+        nombre_cientifico: trimmedCientifico || undefined,
       };
 
       if (!editingId) {
@@ -902,18 +894,15 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
         await updateVariedad(editingId, payload);
       }
 
+      setFormNombre('');
       setFormCodigo('');
-      setFormNombreComercial('');
-      setFormAptitud('');
-      setFormCicloMin('');
-      setFormCicloMax('');
+      setFormCientifico('');
       setEditingId(null);
       await onReloadCatalogs();
     } catch (error) {
       setLocalErrorMessage(
         'No se pudo guardar la variedad. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando variedad:', error);
     } finally {
       setIsSaving(false);
@@ -922,38 +911,43 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
 
   const handleEditVariedad = (item: VariedadPapa) => {
     setEditingId(item.variedad_id);
+    setFormNombre(item.nombre_comercial);
     setFormCodigo(item.codigo_variedad);
-    setFormNombreComercial(item.nombre_comercial);
-    setFormAptitud(item.aptitud ?? '');
-    setFormCicloMin(
-      item.ciclo_dias_min !== undefined && item.ciclo_dias_min !== null
-        ? String(item.ciclo_dias_min)
-        : ''
-    );
-    setFormCicloMax(
-      item.ciclo_dias_max !== undefined && item.ciclo_dias_max !== null
-        ? String(item.ciclo_dias_max)
-        : ''
-    );
+    setFormCientifico(item.nombre_cientifico ?? '');
     setLocalErrorMessage(null);
   };
 
   const handleCancelEditVariedad = () => {
     setEditingId(null);
+    setFormNombre('');
     setFormCodigo('');
-    setFormNombreComercial('');
-    setFormAptitud('');
-    setFormCicloMin('');
-    setFormCicloMax('');
+    setFormCientifico('');
     setLocalErrorMessage(null);
+  };
+
+  const handleDeleteVariedad = async (id: number) => {
+    setIsSaving(true);
+    setLocalErrorMessage(null);
+
+    try {
+      await deleteVariedad(id);
+      await onReloadCatalogs();
+    } catch (error) {
+      setLocalErrorMessage(
+        'No se pudo eliminar la variedad. Intenta nuevamente.'
+      );
+      console.error('Error eliminando variedad:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Variedades de papa</Text>
+        <Text style={styles.sectionTitle}>Catálogo de Variedades</Text>
         <Text style={styles.sectionSubtitle}>
-          Datos en vivo desde /cat/variedades
+          /cat/variedades
         </Text>
       </View>
 
@@ -970,10 +964,70 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
         </View>
       )}
 
+      {localErrorMessage && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>{localErrorMessage}</Text>
+        </View>
+      )}
+
+      <View style={styles.formCard}>
+        <Text style={styles.formTitle}>
+          {editingId === null ? 'Nueva variedad' : 'Editar variedad'}
+        </Text>
+
+        <TextInput
+          value={formCodigo}
+          onChangeText={setFormCodigo}
+          placeholder="Código (ej. WAYCHA)"
+          placeholderTextColor="#9CA3AF"
+          style={styles.textInput}
+        />
+
+        <TextInput
+          value={formNombre}
+          onChangeText={setFormNombre}
+          placeholder="Nombre comercial"
+          placeholderTextColor="#9CA3AF"
+          style={styles.textInput}
+        />
+
+        <TextInput
+          value={formCientifico}
+          onChangeText={setFormCientifico}
+          placeholder="Nombre científico (opcional)"
+          placeholderTextColor="#9CA3AF"
+          style={styles.textInput}
+        />
+
+        <View style={styles.formRow}>
+          <TouchableOpacity
+            onPress={handleSubmitVariedad}
+            disabled={isSaving}
+            style={[
+              styles.primaryButton,
+              isSaving && styles.primaryButtonDisabled,
+            ]}
+          >
+            <Text style={styles.primaryButtonText}>
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditVariedad}
+              disabled={isSaving}
+              style={styles.secondaryButton}
+            >
+              <Text style={styles.secondaryButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {!isLoading && !hasData && !errorMessage && (
         <Text style={styles.emptyText}>
-          No se encontraron variedades. Revisa que existan registros en el
-          backend.
+          No se encontraron variedades.
         </Text>
       )}
 
@@ -981,18 +1035,27 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
       <View style={styles.listCard}>
         {variedades.map((item, index) => (
           <View key={`${item.variedad_id}-${index}`} style={styles.listRow}>
-            <Text style={styles.listRowPrimary}>
-              {item.codigo_variedad} — {item.nombre_comercial}
+            <Text style={styles.listRowPrimary}>{item.nombre_comercial}</Text>
+            <Text style={styles.listRowSecondary}>
+              ID: {item.variedad_id}
+              {item.nombre_cientifico ? ` · ${item.nombre_cientifico}` : ''}
             </Text>
-            {item.aptitud ? (
-              <Text style={styles.listRowSecondary}>
-                Aptitud: {item.aptitud}
-              </Text>
-            ) : null}
-            <Text style={styles.listRowTertiary}>
-              Ciclo (días): {item.ciclo_dias_min ?? '-'} –{' '}
-              {item.ciclo_dias_max ?? '-'}
-            </Text>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                onPress={() => handleEditVariedad(item)}
+                disabled={isSaving}
+                style={styles.linkButton}
+              >
+                <Text style={styles.linkButtonText}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteVariedad(item.variedad_id)}
+                disabled={isSaving}
+                style={styles.linkButtonDanger}
+              >
+                <Text style={styles.linkButtonDangerText}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
       </View>
@@ -1002,353 +1065,319 @@ const VariedadesSection: React.FC<VariedadesSectionProps> = ({
 };
 
 // -----------------------------------------
-// Estilos base de la pantalla
+// Estilos
 // -----------------------------------------
 const styles = StyleSheet.create({
-  // Contenedor raíz a pantalla completa con fondo gris claro
-  // similar al fondo de contenido de AdminLTE.
   root: {
     flex: 1,
-    backgroundColor: '#F4F6F9',
+    backgroundColor: '#F3F4F6', // Fondo general gris claro
   },
-
-  // Fila principal: menú lateral + contenido
-  layoutRow: {
-    flex: 1,
+  topBar: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111827', // Dark header
+    height: 60,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? 24 : 0, // Ajuste para status bar en Android
   },
-
-  // Menú lateral (sidebar) estilo AdminLTE
-  sideMenu: {
-    width: 140,
-    paddingTop: 24,
-    paddingHorizontal: 12,
-    backgroundColor: '#111827',
-    borderRightWidth: 1,
-    borderColor: '#111827', // gris muy oscuro
+  hamburgerButton: {
+    padding: 8,
+    marginRight: 16,
   },
-
-  // Área de contenido principal
-  contentArea: {
-    flex: 1,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    // Fondo gris muy suave, como el cuerpo principal de AdminLTE.
-    backgroundColor: '#F4F6F9',
+  hamburgerIcon: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
-
-  // Contenido de scroll: separa un poco de los bordes
-  scrollContent: {
-    paddingBottom: 40,
-  },
-
-  // Título de la app en el menú lateral
-  appTitle: {
+  appTitleHeader: {
     color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 1,
+    fontWeight: 'bold',
   },
-
-  // Subtítulo de la app (texto gris)
-  appSubtitle: {
-    marginTop: 4,
-    color: '#9CA3AF',
-    fontSize: 12,
+  contentArea: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
   },
-
-  // Separador de secciones en el menú lateral
-  menuDivider: {
-    marginTop: 16,
-    marginBottom: 8,
-    height: 1,
-    backgroundColor: '#1F2937',
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
   },
-
-  // Estilo base de cada ítem del menú
-  menuItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 999,
   },
-
-  // Variante activa del ítem de menú
-  menuItemActive: {
-    borderLeftWidth: 2,
-    borderColor: '#FFFFFF',
+  sideMenu: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 280, // Ancho del menú
+    backgroundColor: '#1F2937', // Gris oscuro
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 10,
   },
-
-  // Texto del ítem de menú
-  menuItemLabel: {
-    color: '#9CA3AF',
-    fontSize: 13,
+  menuHeader: {
+    padding: 20,
+    backgroundColor: '#111827',
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
   },
-
-  // Texto del ítem de menú activo
-  menuItemLabelActive: {
+  appTitle: {
     color: '#FFFFFF',
-    fontWeight: '500',
-  },
-
-  // Subtítulo en gris claro, más discreto
-  subtitle: {
-    marginTop: 12,
-    color: '#9CA3AF', // gris suave (similar Tailwind gray-400)
-    fontSize: 14,
-    textAlign: 'center',
-  },
-
-  // Contenedor general de cada sección de contenido
-  sectionContainer: {
-    gap: 16,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-
-  // Cabecera de cada sección
-  sectionHeader: {
-    marginBottom: 8,
-  },
-
-  sectionTitle: {
-    color: '#111827',
     fontSize: 20,
-    fontWeight: '600',
-  },
-
-  sectionSubtitle: {
-    marginTop: 4,
-    color: '#6B7280',
-    fontSize: 13,
-  },
-
-  // Columna de KPIs (cada tarjeta en bloque)
-  kpiColumn: {
-    marginTop: 16,
-    gap: 12,
-  },
-
-  // Tarjeta KPI sin bordes redondeados
-  kpiCard: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-
-  kpiLabel: {
-    color: '#6B7280',
-    fontSize: 12,
-  },
-
-  kpiValue: {
-    marginTop: 4,
-    color: '#111827',
-    fontSize: 22,
-    fontWeight: '600',
-  },
-
-  kpiHint: {
-    marginTop: 2,
-    color: '#9CA3AF',
-    fontSize: 11,
-  },
-
-  // Bloque de texto explicativo
-  textBlock: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingTop: 12,
-  },
-
-  textBlockTitle: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
     marginBottom: 4,
   },
-
-  textBlockBody: {
-    color: '#6B7280',
-    fontSize: 13,
-    lineHeight: 18,
+  appSubtitle: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-
-  // Tarjeta de lista (contenedor de filas)
-  listCard: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#374151',
+    marginVertical: 8,
+    marginHorizontal: 16,
   },
-
-  // Fila de lista tipo tabla simple
-  listRow: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderColor: '#1F2937',
+  menuItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
-
-  listRowPrimary: {
-    color: '#111827',
+  menuItemActive: {
+    backgroundColor: '#374151',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6', // Azul acento
+  },
+  menuItemLabel: {
+    color: '#D1D5DB',
     fontSize: 14,
     fontWeight: '500',
   },
-
-  listRowSecondary: {
-    marginTop: 2,
-    color: '#9CA3AF',
-    fontSize: 12,
+  menuItemLabelActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
-
-  listRowTertiary: {
-    marginTop: 2,
+  // --- Estilos de Secciones ---
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
     color: '#6B7280',
-    fontSize: 11,
   },
-
-  // Fila de acciones (Editar / Eliminar) en cada registro
-  actionsRow: {
-    marginTop: 6,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    gap: 12,
-  },
-
-  // Botón tipo enlace para acciones primarias
-  linkButton: {
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-  },
-
-  linkButtonText: {
-    color: '#2563EB',
-    fontSize: 12,
-  },
-
-  // Botón tipo enlace para acciones de peligro (eliminar)
-  linkButtonDanger: {
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-  },
-
-  linkButtonDangerText: {
-    color: '#DC2626',
-    fontSize: 12,
-  },
-
-  // Fila de estado (spinner + texto)
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    marginBottom: 16,
   },
-
   statusText: {
-    color: '#4B5563',
-    fontSize: 13,
+    marginLeft: 8,
+    color: '#374151',
+    fontSize: 14,
   },
-
-  // Banner de error al estilo alerta AdminLTE
   errorBanner: {
-    marginBottom: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
     backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 16,
   },
-
   errorBannerText: {
-    color: '#B91C1C',
-    fontSize: 13,
+    color: '#991B1B',
+    fontSize: 14,
   },
-
-  // Texto para estados vacíos
-  emptyText: {
-    marginTop: 4,
-    marginBottom: 8,
-    color: '#6B7280',
-    fontSize: 13,
+  // --- KPIs ---
+  kpiColumn: {
+    flexDirection: 'column', // En móvil, KPIs uno debajo de otro o grid
+    gap: 12,
+    marginBottom: 24,
   },
-
-  // Tarjeta contenedora de formularios (crear/editar, filtros)
-  formCard: {
-    marginBottom: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+  kpiCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
-
-  formTitle: {
-    marginBottom: 8,
-    color: '#111827',
-    fontSize: 14,
+  kpiLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    textTransform: 'uppercase',
     fontWeight: '600',
+    marginBottom: 4,
   },
-
-  // Campo de texto estándar tipo AdminLTE
-  textInput: {
+  kpiValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  kpiHint: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  // --- Bloques de texto ---
+  textBlock: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  textBlockTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
     marginBottom: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+  },
+  textBlockBody: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 20,
+  },
+  // --- Formularios ---
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  textInput: {
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
     color: '#111827',
-    fontSize: 13,
+    marginBottom: 12,
+    backgroundColor: '#F9FAFB',
   },
-
-  // Fila de botones en formularios
   formRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
     gap: 8,
-    marginTop: 4,
+    marginBottom: 8,
   },
-
-  // Botón principal (similar a btn-primary)
   primaryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#111827',
+    backgroundColor: '#2563EB', // Azul intenso
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-
   primaryButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
-
   primaryButtonText: {
     color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  secondaryButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#374151',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  // --- Listas ---
+  listCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  listRow: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  listRowPrimary: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  listRowSecondary: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  linkButton: {
+    paddingVertical: 4,
+  },
+  linkButtonText: {
+    color: '#2563EB',
     fontSize: 13,
     fontWeight: '500',
   },
-
-  // Botón secundario (similar a btn-secondary)
-  secondaryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
+  linkButtonDanger: {
+    paddingVertical: 4,
   },
-
-  secondaryButtonText: {
-    color: '#374151',
+  linkButtonDangerText: {
+    color: '#DC2626',
     fontSize: 13,
+    fontWeight: '500',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#6B7280',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
 });
 
-// -----------------------------------------
-// Exportación por defecto del componente App
-// -----------------------------------------
 export default App;

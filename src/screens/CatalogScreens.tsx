@@ -14,17 +14,20 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 import type {
   Planta,
   Cliente,
   Transportista,
   Almacen,
+  Municipio,
 } from '../api/catalogTypes';
 import type {
   Productor,
   LoteCampo,
   SensorLectura,
+  VariedadPapa,
 } from '../api/campoTypes';
 
 import {
@@ -64,6 +67,8 @@ import {
   deleteLoteCampo,
 } from '../api/lotesCampoApi';
 import { getLecturas } from '../api/lecturasApi';
+import { getMunicipios } from '../api/municipiosApi';
+import { getVariedades } from '../api/variedadesApi';
 import { CatalogListScreen } from './CatalogListScreen';
 
 // -----------------------------------------
@@ -71,6 +76,7 @@ import { CatalogListScreen } from './CatalogListScreen';
 // -----------------------------------------
 export const PlantasScreen: React.FC = () => {
   const [items, setItems] = useState<Planta[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -86,11 +92,14 @@ export const PlantasScreen: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getPlantas(searchText.trim() || undefined);
+      const [data, municipiosData] = await Promise.all([
+        getPlantas(searchText.trim() || undefined),
+        getMunicipios(),
+      ]);
       setItems(data);
+      setMunicipios(municipiosData);
     } catch (error) {
-      setErrorMessage('No se pudieron cargar las plantas.');
-      // eslint-disable-next-line no-console
+      setErrorMessage('No se pudieron cargar las plantas o municipios.');
       console.error('Error cargando plantas:', error);
     } finally {
       setIsLoading(false);
@@ -104,14 +113,14 @@ export const PlantasScreen: React.FC = () => {
 
     if (!codigo || !nombre || !municipio) {
       setLocalError(
-        'Código, nombre y municipio_id son obligatorios para la planta.'
+        'Código, nombre y municipio son obligatorios para la planta.'
       );
       return;
     }
 
     const municipioId = Number(municipio);
     if (Number.isNaN(municipioId)) {
-      setLocalError('El municipio_id debe ser un número válido.');
+      setLocalError('El municipio debe ser válido.');
       return;
     }
 
@@ -142,7 +151,6 @@ export const PlantasScreen: React.FC = () => {
       setLocalError(
         'No se pudo guardar la planta. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando planta:', error);
     } finally {
       setIsSaving(false);
@@ -176,7 +184,6 @@ export const PlantasScreen: React.FC = () => {
       await handleLoad();
     } catch (error) {
       setLocalError('No se pudo eliminar la planta. Intenta nuevamente.');
-      // eslint-disable-next-line no-console
       console.error('Error eliminando planta:', error);
     } finally {
       setIsSaving(false);
@@ -203,7 +210,7 @@ export const PlantasScreen: React.FC = () => {
           <View>
             <SafeItemRow
               title={`${item.codigo_planta} — ${item.nombre}`}
-              subtitle={`Municipio ID: ${item.municipio_id}`}
+              subtitle={`Municipio: ${municipios.find(m => m.municipio_id === item.municipio_id)?.nombre || item.municipio_id}`}
               extra={item.direccion ? `Dirección: ${item.direccion}` : null}
             />
             <View
@@ -287,23 +294,21 @@ export const PlantasScreen: React.FC = () => {
               }}
             />
 
-            <TextInput
-              value={formMunicipioId}
-              onChangeText={setFormMunicipioId}
-              placeholder="Municipio ID (número)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              style={{
-                marginBottom: 8,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
-                fontSize: 13,
-              }}
-            />
+            <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 8, backgroundColor: 'white' }}>
+              <Picker
+                selectedValue={formMunicipioId}
+                onValueChange={(itemValue) => setFormMunicipioId(itemValue)}
+              >
+                <Picker.Item label="Selecciona un municipio..." value="" />
+                {municipios.map((m) => (
+                  <Picker.Item
+                    key={m.municipio_id}
+                    label={m.nombre}
+                    value={String(m.municipio_id)}
+                  />
+                ))}
+              </Picker>
+            </View>
 
             <TextInput
               value={formDireccion}
@@ -376,6 +381,7 @@ export const PlantasScreen: React.FC = () => {
 // -----------------------------------------
 export const ClientesScreen: React.FC = () => {
   const [items, setItems] = useState<Cliente[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -392,11 +398,14 @@ export const ClientesScreen: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getClientes(searchText.trim() || undefined);
+      const [data, municipiosData] = await Promise.all([
+        getClientes(searchText.trim() || undefined),
+        getMunicipios(),
+      ]);
       setItems(data);
+      setMunicipios(municipiosData);
     } catch (error) {
-      setErrorMessage('No se pudieron cargar los clientes.');
-      // eslint-disable-next-line no-console
+      setErrorMessage('No se pudieron cargar los clientes o municipios.');
       console.error('Error cargando clientes:', error);
     } finally {
       setIsLoading(false);
@@ -423,7 +432,7 @@ export const ClientesScreen: React.FC = () => {
     const municipioId =
       municipio.trim() === '' ? null : Number(municipio.trim());
     if (municipioId !== null && Number.isNaN(municipioId)) {
-      setLocalError('El municipio_id debe ser un número válido o quedar vacío.');
+      setLocalError('El municipio debe ser válido.');
       return;
     }
 
@@ -456,7 +465,6 @@ export const ClientesScreen: React.FC = () => {
       setLocalError(
         'No se pudo guardar el cliente. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando cliente:', error);
     } finally {
       setIsSaving(false);
@@ -496,7 +504,6 @@ export const ClientesScreen: React.FC = () => {
       await handleLoad();
     } catch (error) {
       setLocalError('No se pudo eliminar el cliente. Intenta nuevamente.');
-      // eslint-disable-next-line no-console
       console.error('Error eliminando cliente:', error);
     } finally {
       setIsSaving(false);
@@ -519,7 +526,7 @@ export const ClientesScreen: React.FC = () => {
           <View>
             <SafeItemRow
               title={`${item.codigo_cliente} — ${item.nombre}`}
-              subtitle={`Tipo: ${item.tipo}`}
+              subtitle={`Tipo: ${item.tipo} · Municipio: ${municipios.find(m => m.municipio_id === item.municipio_id)?.nombre || item.municipio_id || '-'}`}
               extra={
                 item.direccion ? `Dirección: ${item.direccion}` : undefined
               }
@@ -622,23 +629,21 @@ export const ClientesScreen: React.FC = () => {
               }}
             />
 
-            <TextInput
-              value={formMunicipioId}
-              onChangeText={setFormMunicipioId}
-              placeholder="Municipio ID (opcional)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              style={{
-                marginBottom: 8,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
-                fontSize: 13,
-              }}
-            />
+            <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 8, backgroundColor: 'white' }}>
+              <Picker
+                selectedValue={formMunicipioId}
+                onValueChange={(itemValue) => setFormMunicipioId(itemValue)}
+              >
+                <Picker.Item label="Selecciona un municipio (opcional)..." value="" />
+                {municipios.map((m) => (
+                  <Picker.Item
+                    key={m.municipio_id}
+                    label={m.nombre}
+                    value={String(m.municipio_id)}
+                  />
+                ))}
+              </Picker>
+            </View>
 
             <TextInput
               value={formDireccion}
@@ -729,7 +734,6 @@ export const TransportistasScreen: React.FC = () => {
       setItems(data);
     } catch (error) {
       setErrorMessage('No se pudieron cargar los transportistas.');
-      // eslint-disable-next-line no-console
       console.error('Error cargando transportistas:', error);
     } finally {
       setIsLoading(false);
@@ -774,7 +778,6 @@ export const TransportistasScreen: React.FC = () => {
       setLocalError(
         'No se pudo guardar el transportista. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando transportista:', error);
     } finally {
       setIsSaving(false);
@@ -808,7 +811,6 @@ export const TransportistasScreen: React.FC = () => {
       setLocalError(
         'No se pudo eliminar el transportista. Intenta nuevamente.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error eliminando transportista:', error);
     } finally {
       setIsSaving(false);
@@ -989,6 +991,7 @@ export const TransportistasScreen: React.FC = () => {
 // -----------------------------------------
 export const AlmacenesScreen: React.FC = () => {
   const [items, setItems] = useState<Almacen[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -1004,11 +1007,14 @@ export const AlmacenesScreen: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getAlmacenes(searchText.trim() || undefined);
+      const [data, municipiosData] = await Promise.all([
+        getAlmacenes(searchText.trim() || undefined),
+        getMunicipios(),
+      ]);
       setItems(data);
+      setMunicipios(municipiosData);
     } catch (error) {
-      setErrorMessage('No se pudieron cargar los almacenes.');
-      // eslint-disable-next-line no-console
+      setErrorMessage('No se pudieron cargar los almacenes o municipios.');
       console.error('Error cargando almacenes:', error);
     } finally {
       setIsLoading(false);
@@ -1026,14 +1032,14 @@ export const AlmacenesScreen: React.FC = () => {
 
     if (!codigo || !nombre || !municipio) {
       setLocalError(
-        'Código, nombre y municipio_id son obligatorios para el almacén.'
+        'Código, nombre y municipio son obligatorios para el almacén.'
       );
       return;
     }
 
     const municipioId = Number(municipio);
     if (Number.isNaN(municipioId)) {
-      setLocalError('El municipio_id debe ser un número válido.');
+      setLocalError('El municipio debe ser válido.');
       return;
     }
 
@@ -1064,7 +1070,6 @@ export const AlmacenesScreen: React.FC = () => {
       setLocalError(
         'No se pudo guardar el almacén. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando almacén:', error);
     } finally {
       setIsSaving(false);
@@ -1098,7 +1103,6 @@ export const AlmacenesScreen: React.FC = () => {
       await handleLoad();
     } catch (error) {
       setLocalError('No se pudo eliminar el almacén. Intenta nuevamente.');
-      // eslint-disable-next-line no-console
       console.error('Error eliminando almacén:', error);
     } finally {
       setIsSaving(false);
@@ -1121,7 +1125,7 @@ export const AlmacenesScreen: React.FC = () => {
           <View>
             <SafeItemRow
               title={`${item.codigo_almacen} — ${item.nombre}`}
-              subtitle={`Municipio ID: ${item.municipio_id}`}
+              subtitle={`Municipio: ${municipios.find(m => m.municipio_id === item.municipio_id)?.nombre || item.municipio_id}`}
               extra={
                 item.direccion ? `Dirección: ${item.direccion}` : undefined
               }
@@ -1207,23 +1211,21 @@ export const AlmacenesScreen: React.FC = () => {
               }}
             />
 
-            <TextInput
-              value={formMunicipioId}
-              onChangeText={setFormMunicipioId}
-              placeholder="Municipio ID (número)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              style={{
-                marginBottom: 8,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
-                fontSize: 13,
-              }}
-            />
+            <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 8, backgroundColor: 'white' }}>
+              <Picker
+                selectedValue={formMunicipioId}
+                onValueChange={(itemValue) => setFormMunicipioId(itemValue)}
+              >
+                <Picker.Item label="Selecciona un municipio..." value="" />
+                {municipios.map((m) => (
+                  <Picker.Item
+                    key={m.municipio_id}
+                    label={m.nombre}
+                    value={String(m.municipio_id)}
+                  />
+                ))}
+              </Picker>
+            </View>
 
             <TextInput
               value={formDireccion}
@@ -1296,6 +1298,7 @@ export const AlmacenesScreen: React.FC = () => {
 // -----------------------------------------
 export const ProductoresScreen: React.FC = () => {
   const [items, setItems] = useState<Productor[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -1311,11 +1314,14 @@ export const ProductoresScreen: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getProductores(searchText.trim() || undefined);
+      const [data, municipiosData] = await Promise.all([
+        getProductores(searchText.trim() || undefined),
+        getMunicipios(),
+      ]);
       setItems(data);
+      setMunicipios(municipiosData);
     } catch (error) {
-      setErrorMessage('No se pudieron cargar los productores.');
-      // eslint-disable-next-line no-console
+      setErrorMessage('No se pudieron cargar los productores o municipios.');
       console.error('Error cargando productores:', error);
     } finally {
       setIsLoading(false);
@@ -1333,14 +1339,14 @@ export const ProductoresScreen: React.FC = () => {
 
     if (!codigo || !nombre || !municipio) {
       setLocalError(
-        'Código, nombre y municipio_id son obligatorios para el productor.'
+        'Código, nombre y municipio son obligatorios para el productor.'
       );
       return;
     }
 
     const municipioId = Number(municipio);
     if (Number.isNaN(municipioId)) {
-      setLocalError('El municipio_id debe ser un número válido.');
+      setLocalError('El municipio debe ser válido.');
       return;
     }
 
@@ -1371,7 +1377,6 @@ export const ProductoresScreen: React.FC = () => {
       setLocalError(
         'No se pudo guardar el productor. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando productor:', error);
     } finally {
       setIsSaving(false);
@@ -1405,7 +1410,6 @@ export const ProductoresScreen: React.FC = () => {
       await handleLoad();
     } catch (error) {
       setLocalError('No se pudo eliminar el productor. Intenta nuevamente.');
-      // eslint-disable-next-line no-console
       console.error('Error eliminando productor:', error);
     } finally {
       setIsSaving(false);
@@ -1428,7 +1432,7 @@ export const ProductoresScreen: React.FC = () => {
           <View>
             <SafeItemRow
               title={`${item.codigo_productor} — ${item.nombre}`}
-              subtitle={`Municipio ID: ${item.municipio_id}`}
+              subtitle={`Municipio: ${municipios.find(m => m.municipio_id === item.municipio_id)?.nombre || item.municipio_id}`}
               extra={item.telefono ? `Teléfono: ${item.telefono}` : undefined}
             />
             <View
@@ -1512,23 +1516,21 @@ export const ProductoresScreen: React.FC = () => {
               }}
             />
 
-            <TextInput
-              value={formMunicipioId}
-              onChangeText={setFormMunicipioId}
-              placeholder="Municipio ID (número)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              style={{
-                marginBottom: 8,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
-                fontSize: 13,
-              }}
-            />
+            <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 8, backgroundColor: 'white' }}>
+              <Picker
+                selectedValue={formMunicipioId}
+                onValueChange={(itemValue) => setFormMunicipioId(itemValue)}
+              >
+                <Picker.Item label="Selecciona un municipio..." value="" />
+                {municipios.map((m) => (
+                  <Picker.Item
+                    key={m.municipio_id}
+                    label={m.nombre}
+                    value={String(m.municipio_id)}
+                  />
+                ))}
+              </Picker>
+            </View>
 
             <TextInput
               value={formTelefono}
@@ -1601,6 +1603,8 @@ export const ProductoresScreen: React.FC = () => {
 // -----------------------------------------
 export const LotesCampoScreen: React.FC = () => {
   const [items, setItems] = useState<LoteCampo[]>([]);
+  const [productores, setProductores] = useState<Productor[]>([]);
+  const [variedades, setVariedades] = useState<VariedadPapa[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -1617,11 +1621,16 @@ export const LotesCampoScreen: React.FC = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getLotesCampo(searchText.trim() || undefined);
+      const [data, productoresData, variedadesData] = await Promise.all([
+        getLotesCampo(searchText.trim() || undefined),
+        getProductores(),
+        getVariedades(),
+      ]);
       setItems(data);
+      setProductores(productoresData);
+      setVariedades(variedadesData);
     } catch (error) {
-      setErrorMessage('No se pudieron cargar los lotes de campo.');
-      // eslint-disable-next-line no-console
+      setErrorMessage('No se pudieron cargar los lotes, productores o variedades.');
       console.error('Error cargando lotes de campo:', error);
     } finally {
       setIsLoading(false);
@@ -1641,7 +1650,7 @@ export const LotesCampoScreen: React.FC = () => {
 
     if (!codigo || !productor || !variedad || !superficie || !fechaSiembra) {
       setLocalError(
-        'Código, productor_id, variedad_id, superficie_ha y fecha_siembra son obligatorios.'
+        'Todos los campos son obligatorios.'
       );
       return;
     }
@@ -1655,7 +1664,7 @@ export const LotesCampoScreen: React.FC = () => {
       Number.isNaN(variedadId) ||
       Number.isNaN(superficieHa)
     ) {
-      setLocalError('productor_id, variedad_id y superficie_ha deben ser numéricos.');
+      setLocalError('Productor, variedad y superficie deben ser numéricos.');
       return;
     }
 
@@ -1688,7 +1697,6 @@ export const LotesCampoScreen: React.FC = () => {
       setLocalError(
         'No se pudo guardar el lote de campo. Verifica la conexión o los datos.'
       );
-      // eslint-disable-next-line no-console
       console.error('Error guardando lote de campo:', error);
     } finally {
       setIsSaving(false);
@@ -1724,7 +1732,6 @@ export const LotesCampoScreen: React.FC = () => {
       await handleLoad();
     } catch (error) {
       setLocalError('No se pudo eliminar el lote. Intenta nuevamente.');
-      // eslint-disable-next-line no-console
       console.error('Error eliminando lote de campo:', error);
     } finally {
       setIsSaving(false);
@@ -1747,7 +1754,7 @@ export const LotesCampoScreen: React.FC = () => {
           <View>
             <SafeItemRow
               title={`${item.codigo_lote_campo}`}
-              subtitle={`Productor ID: ${item.productor_id} · Variedad ID: ${item.variedad_id}`}
+              subtitle={`Productor: ${productores.find(p => p.productor_id === item.productor_id)?.nombre || item.productor_id} · Variedad: ${variedades.find(v => v.variedad_id === item.variedad_id)?.nombre_comercial || item.variedad_id}`}
               extra={`Superficie: ${item.superficie_ha} ha`}
             />
             <View
@@ -1814,41 +1821,37 @@ export const LotesCampoScreen: React.FC = () => {
               }}
             />
 
-            <TextInput
-              value={formProductorId}
-              onChangeText={setFormProductorId}
-              placeholder="Productor ID (número)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              style={{
-                marginBottom: 8,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
-                fontSize: 13,
-              }}
-            />
+            <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 8, backgroundColor: 'white' }}>
+              <Picker
+                selectedValue={formProductorId}
+                onValueChange={(itemValue) => setFormProductorId(itemValue)}
+              >
+                <Picker.Item label="Selecciona un productor..." value="" />
+                {productores.map((p) => (
+                  <Picker.Item
+                    key={p.productor_id}
+                    label={p.nombre}
+                    value={String(p.productor_id)}
+                  />
+                ))}
+              </Picker>
+            </View>
 
-            <TextInput
-              value={formVariedadId}
-              onChangeText={setFormVariedadId}
-              placeholder="Variedad ID (número)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              style={{
-                marginBottom: 8,
-                paddingVertical: 6,
-                paddingHorizontal: 8,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#111827',
-                fontSize: 13,
-              }}
-            />
+            <View style={{ borderWidth: 1, borderColor: '#D1D5DB', marginBottom: 8, backgroundColor: 'white' }}>
+              <Picker
+                selectedValue={formVariedadId}
+                onValueChange={(itemValue) => setFormVariedadId(itemValue)}
+              >
+                <Picker.Item label="Selecciona una variedad..." value="" />
+                {variedades.map((v) => (
+                  <Picker.Item
+                    key={v.variedad_id}
+                    label={v.nombre_comercial}
+                    value={String(v.variedad_id)}
+                  />
+                ))}
+              </Picker>
+            </View>
 
             <TextInput
               value={formSuperficie}
@@ -1950,7 +1953,6 @@ export const LecturasScreen: React.FC = () => {
       setItems(data);
     } catch (error) {
       setErrorMessage('No se pudieron cargar las lecturas de sensor.');
-      // eslint-disable-next-line no-console
       console.error('Error cargando lecturas:', error);
     } finally {
       setIsLoading(false);
@@ -2017,5 +2019,3 @@ const SafeItemRow: React.FC<SafeItemRowProps> = ({
     </View>
   );
 };
-
-
