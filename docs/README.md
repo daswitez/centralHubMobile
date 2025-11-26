@@ -1,5 +1,3 @@
-## Proyecto Laravel + AdminLTE 3 (AgroPapas)
-
 Esta guía explica cómo preparar el entorno, correr la aplicación y usar los endpoints CRUD creados para los catálogos base.
 
 ### Requisitos
