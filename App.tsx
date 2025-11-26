@@ -52,13 +52,35 @@ import {
   deleteVariedad,
 } from './src/api/variedadesApi';
 
+// Pantallas adicionales para catálogos extendidos y campo.
+import {
+  PlantasScreen,
+  ClientesScreen,
+  TransportistasScreen,
+  AlmacenesScreen,
+  ProductoresScreen,
+  LotesCampoScreen,
+  LecturasScreen,
+} from './src/screens/CatalogScreens';
+
 // -----------------------------------------
 // Tipo de sección para el menú lateral
 // -----------------------------------------
 // Define las llaves disponibles en el dashboard
 // para poder cambiar entre vistas usando un
 // simple estado local.
-type SectionKey = 'dashboard' | 'departamentos' | 'municipios' | 'variedades';
+type SectionKey =
+  | 'dashboard'
+  | 'departamentos'
+  | 'municipios'
+  | 'variedades'
+  | 'plantas'
+  | 'clientes'
+  | 'transportistas'
+  | 'almacenes'
+  | 'productores'
+  | 'lotesCampo'
+  | 'lecturas';
 
 // -----------------------------------------
 // Componente principal de la app
@@ -160,11 +182,28 @@ const App: React.FC = () => {
           {/* Separador visual */}
           <View style={styles.menuDivider} />
 
-          {/* Opciones de navegación */}
+          {/* Opciones de navegación - catálogos base */}
           {renderMenuItem('dashboard', 'Dashboard')}
           {renderMenuItem('departamentos', 'Departamentos')}
           {renderMenuItem('municipios', 'Municipios')}
           {renderMenuItem('variedades', 'Variedades')}
+
+          {/* Separador de grupo */}
+          <View style={styles.menuDivider} />
+
+          {/* Catálogos extendidos */}
+          {renderMenuItem('plantas', 'Plantas')}
+          {renderMenuItem('clientes', 'Clientes')}
+          {renderMenuItem('transportistas', 'Transportistas')}
+          {renderMenuItem('almacenes', 'Almacenes')}
+
+          {/* Separador de grupo */}
+          <View style={styles.menuDivider} />
+
+          {/* Campo */}
+          {renderMenuItem('productores', 'Productores')}
+          {renderMenuItem('lotesCampo', 'Lotes campo')}
+          {renderMenuItem('lecturas', 'Lecturas sensor')}
         </View>
 
         {/* Área principal de contenido */}
@@ -210,6 +249,14 @@ const App: React.FC = () => {
                 onReloadCatalogs={handleLoadCatalogs}
               />
             )}
+
+            {activeSection === 'plantas' && <PlantasScreen />}
+            {activeSection === 'clientes' && <ClientesScreen />}
+            {activeSection === 'transportistas' && <TransportistasScreen />}
+            {activeSection === 'almacenes' && <AlmacenesScreen />}
+            {activeSection === 'productores' && <ProductoresScreen />}
+            {activeSection === 'lotesCampo' && <LotesCampoScreen />}
+            {activeSection === 'lecturas' && <LecturasScreen />}
           </ScrollView>
         </View>
       </View>
