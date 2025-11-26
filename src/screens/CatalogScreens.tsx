@@ -33,11 +33,36 @@ import {
   updatePlanta,
   deletePlanta,
 } from '../api/plantasApi';
-import { getClientes } from '../api/clientesApi';
-import { getTransportistas } from '../api/transportistasApi';
-import { getAlmacenes } from '../api/almacenesApi';
-import { getProductores } from '../api/productoresApi';
-import { getLotesCampo } from '../api/lotesCampoApi';
+import {
+  getClientes,
+  createCliente,
+  updateCliente,
+  deleteCliente,
+} from '../api/clientesApi';
+import {
+  getTransportistas,
+  createTransportista,
+  updateTransportista,
+  deleteTransportista,
+} from '../api/transportistasApi';
+import {
+  getAlmacenes,
+  createAlmacen,
+  updateAlmacen,
+  deleteAlmacen,
+} from '../api/almacenesApi';
+import {
+  getProductores,
+  createProductor,
+  updateProductor,
+  deleteProductor,
+} from '../api/productoresApi';
+import {
+  getLotesCampo,
+  createLoteCampo,
+  updateLoteCampo,
+  deleteLoteCampo,
+} from '../api/lotesCampoApi';
 import { getLecturas } from '../api/lecturasApi';
 import { CatalogListScreen } from './CatalogListScreen';
 
@@ -358,6 +383,14 @@ export const ClientesScreen: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formCodigo, setFormCodigo] = useState<string>('');
+  const [formNombre, setFormNombre] = useState<string>('');
+  const [formTipo, setFormTipo] = useState<string>('');
+  const [formMunicipioId, setFormMunicipioId] = useState<string>('');
+  const [formDireccion, setFormDireccion] = useState<string>('');
 
   const handleLoad = async () => {
     setIsLoading(true);
@@ -378,6 +411,102 @@ export const ClientesScreen: React.FC = () => {
     void handleLoad();
   }, []);
 
+  const handleSubmitCliente = async () => {
+    const codigo = formCodigo.trim();
+    const nombre = formNombre.trim();
+    const tipo = formTipo.trim();
+    const municipio = formMunicipioId.trim();
+
+    if (!codigo || !nombre || !tipo) {
+      setLocalError(
+        'Código, nombre y tipo son obligatorios para el cliente.'
+      );
+      return;
+    }
+
+    const municipioId =
+      municipio.trim() === '' ? null : Number(municipio.trim());
+    if (municipioId !== null && Number.isNaN(municipioId)) {
+      setLocalError('El municipio_id debe ser un número válido o quedar vacío.');
+      return;
+    }
+
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      const payload = {
+        codigo_cliente: codigo,
+        nombre,
+        tipo,
+        municipio_id: municipioId,
+        direccion: formDireccion.trim() || null,
+      };
+
+      if (editingId === null) {
+        await createCliente(payload);
+      } else {
+        await updateCliente(editingId, payload);
+      }
+
+      setFormCodigo('');
+      setFormNombre('');
+      setFormTipo('');
+      setFormMunicipioId('');
+      setFormDireccion('');
+      setEditingId(null);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo guardar el cliente. Verifica la conexión o los datos.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error guardando cliente:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditCliente = (item: Cliente) => {
+    setEditingId(item.cliente_id);
+    setFormCodigo(item.codigo_cliente);
+    setFormNombre(item.nombre);
+    setFormTipo(item.tipo);
+    setFormMunicipioId(
+      item.municipio_id !== undefined && item.municipio_id !== null
+        ? String(item.municipio_id)
+        : ''
+    );
+    setFormDireccion(item.direccion ?? '');
+    setLocalError(null);
+  };
+
+  const handleCancelEditCliente = () => {
+    setEditingId(null);
+    setFormCodigo('');
+    setFormNombre('');
+    setFormTipo('');
+    setFormMunicipioId('');
+    setFormDireccion('');
+    setLocalError(null);
+  };
+
+  const handleDeleteCliente = async (clienteId: number) => {
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      await deleteCliente(clienteId);
+      await handleLoad();
+    } catch (error) {
+      setLocalError('No se pudo eliminar el cliente. Intenta nuevamente.');
+      // eslint-disable-next-line no-console
+      console.error('Error eliminando cliente:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F6F9' }}>
       <CatalogListScreen<Cliente>
@@ -388,18 +517,199 @@ export const ClientesScreen: React.FC = () => {
         onSearchTextChange={setSearchText}
         onSearchPress={handleLoad}
         isLoading={isLoading}
-        errorMessage={errorMessage}
+        errorMessage={errorMessage ?? localError}
         items={items}
         renderRow={(item) => (
-          <SafeItemRow
-            title={`${item.codigo_cliente} — ${item.nombre}`}
-            subtitle={`Tipo: ${item.tipo}`}
-            extra={
-              item.direccion ? `Dirección: ${item.direccion}` : undefined
-            }
-          />
+          <View>
+            <SafeItemRow
+              title={`${item.codigo_cliente} — ${item.nombre}`}
+              subtitle={`Tipo: ${item.tipo}`}
+              extra={
+                item.direccion ? `Dirección: ${item.direccion}` : undefined
+              }
+            />
+            <View
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleEditCliente(item)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#2563EB', fontSize: 12 }}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteCliente(item.cliente_id)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#DC2626', fontSize: 12 }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
+
+      {/* Formulario de alta/edición de cliente */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          backgroundColor: '#F9FAFB',
+          padding: 12,
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: 8,
+            color: '#111827',
+            fontSize: 14,
+            fontWeight: '600',
+          }}
+        >
+          {editingId === null ? 'Nuevo cliente' : 'Editar cliente'}
+        </Text>
+
+        <TextInput
+          value={formCodigo}
+          onChangeText={setFormCodigo}
+          placeholder="Código de cliente"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formNombre}
+          onChangeText={setFormNombre}
+          placeholder="Nombre del cliente"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formTipo}
+          onChangeText={setFormTipo}
+          placeholder="Tipo (MAYORISTA, RETAIL, etc.)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formMunicipioId}
+          onChangeText={setFormMunicipioId}
+          placeholder="Municipio ID (opcional)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formDireccion}
+          onChangeText={setFormDireccion}
+          placeholder="Dirección (opcional)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmitCliente}
+            disabled={isSaving}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: '#111827',
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            <Text
+              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+            >
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditCliente}
+              disabled={isSaving}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -412,6 +722,12 @@ export const TransportistasScreen: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formCodigo, setFormCodigo] = useState<string>('');
+  const [formNombre, setFormNombre] = useState<string>('');
+  const [formLicencia, setFormLicencia] = useState<string>('');
 
   const handleLoad = async () => {
     setIsLoading(true);
@@ -432,6 +748,81 @@ export const TransportistasScreen: React.FC = () => {
     void handleLoad();
   }, []);
 
+  const handleSubmitTransportista = async () => {
+    const codigo = formCodigo.trim();
+    const nombre = formNombre.trim();
+
+    if (!codigo || !nombre) {
+      setLocalError('Código y nombre son obligatorios para el transportista.');
+      return;
+    }
+
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      const payload = {
+        codigo_transp: codigo,
+        nombre,
+        nro_licencia: formLicencia.trim() || null,
+      };
+
+      if (editingId === null) {
+        await createTransportista(payload);
+      } else {
+        await updateTransportista(editingId, payload);
+      }
+
+      setFormCodigo('');
+      setFormNombre('');
+      setFormLicencia('');
+      setEditingId(null);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo guardar el transportista. Verifica la conexión o los datos.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error guardando transportista:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditTransportista = (item: Transportista) => {
+    setEditingId(item.transportista_id);
+    setFormCodigo(item.codigo_transp);
+    setFormNombre(item.nombre);
+    setFormLicencia(item.nro_licencia ?? '');
+    setLocalError(null);
+  };
+
+  const handleCancelEditTransportista = () => {
+    setEditingId(null);
+    setFormCodigo('');
+    setFormNombre('');
+    setFormLicencia('');
+    setLocalError(null);
+  };
+
+  const handleDeleteTransportista = async (id: number) => {
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      await deleteTransportista(id);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo eliminar el transportista. Intenta nuevamente.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error eliminando transportista:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F6F9' }}>
       <CatalogListScreen<Transportista>
@@ -442,19 +833,165 @@ export const TransportistasScreen: React.FC = () => {
         onSearchTextChange={setSearchText}
         onSearchPress={handleLoad}
         isLoading={isLoading}
-        errorMessage={errorMessage}
+        errorMessage={errorMessage ?? localError}
         items={items}
         renderRow={(item) => (
-          <SafeItemRow
-            title={`${item.codigo_transp} — ${item.nombre}`}
-            subtitle={
-              item.nro_licencia
-                ? `Licencia: ${item.nro_licencia}`
-                : 'Sin licencia registrada'
-            }
-          />
+          <View>
+            <SafeItemRow
+              title={`${item.codigo_transp} — ${item.nombre}`}
+              subtitle={
+                item.nro_licencia
+                  ? `Licencia: ${item.nro_licencia}`
+                  : 'Sin licencia registrada'
+              }
+            />
+            <View
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleEditTransportista(item)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#2563EB', fontSize: 12 }}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteTransportista(item.transportista_id)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#DC2626', fontSize: 12 }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
+
+      {/* Formulario alta/edición transportista */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          backgroundColor: '#F9FAFB',
+          padding: 12,
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: 8,
+            color: '#111827',
+            fontSize: 14,
+            fontWeight: '600',
+          }}
+        >
+          {editingId === null ? 'Nuevo transportista' : 'Editar transportista'}
+        </Text>
+
+        <TextInput
+          value={formCodigo}
+          onChangeText={setFormCodigo}
+          placeholder="Código de transportista"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formNombre}
+          onChangeText={setFormNombre}
+          placeholder="Nombre o razón social"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formLicencia}
+          onChangeText={setFormLicencia}
+          placeholder="Nº de licencia (opcional)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmitTransportista}
+            disabled={isSaving}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: '#111827',
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            <Text
+              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+            >
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditTransportista}
+              disabled={isSaving}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -467,6 +1004,13 @@ export const AlmacenesScreen: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formCodigo, setFormCodigo] = useState<string>('');
+  const [formNombre, setFormNombre] = useState<string>('');
+  const [formMunicipioId, setFormMunicipioId] = useState<string>('');
+  const [formDireccion, setFormDireccion] = useState<string>('');
 
   const handleLoad = async () => {
     setIsLoading(true);
@@ -487,6 +1031,92 @@ export const AlmacenesScreen: React.FC = () => {
     void handleLoad();
   }, []);
 
+  const handleSubmitAlmacen = async () => {
+    const codigo = formCodigo.trim();
+    const nombre = formNombre.trim();
+    const municipio = formMunicipioId.trim();
+
+    if (!codigo || !nombre || !municipio) {
+      setLocalError(
+        'Código, nombre y municipio_id son obligatorios para el almacén.'
+      );
+      return;
+    }
+
+    const municipioId = Number(municipio);
+    if (Number.isNaN(municipioId)) {
+      setLocalError('El municipio_id debe ser un número válido.');
+      return;
+    }
+
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      const payload = {
+        codigo_almacen: codigo,
+        nombre,
+        municipio_id: municipioId,
+        direccion: formDireccion.trim() || null,
+      };
+
+      if (editingId === null) {
+        await createAlmacen(payload);
+      } else {
+        await updateAlmacen(editingId, payload);
+      }
+
+      setFormCodigo('');
+      setFormNombre('');
+      setFormMunicipioId('');
+      setFormDireccion('');
+      setEditingId(null);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo guardar el almacén. Verifica la conexión o los datos.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error guardando almacén:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditAlmacen = (item: Almacen) => {
+    setEditingId(item.almacen_id);
+    setFormCodigo(item.codigo_almacen);
+    setFormNombre(item.nombre);
+    setFormMunicipioId(String(item.municipio_id));
+    setFormDireccion(item.direccion ?? '');
+    setLocalError(null);
+  };
+
+  const handleCancelEditAlmacen = () => {
+    setEditingId(null);
+    setFormCodigo('');
+    setFormNombre('');
+    setFormMunicipioId('');
+    setFormDireccion('');
+    setLocalError(null);
+  };
+
+  const handleDeleteAlmacen = async (id: number) => {
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      await deleteAlmacen(id);
+      await handleLoad();
+    } catch (error) {
+      setLocalError('No se pudo eliminar el almacén. Intenta nuevamente.');
+      // eslint-disable-next-line no-console
+      console.error('Error eliminando almacén:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F6F9' }}>
       <CatalogListScreen<Almacen>
@@ -497,18 +1127,182 @@ export const AlmacenesScreen: React.FC = () => {
         onSearchTextChange={setSearchText}
         onSearchPress={handleLoad}
         isLoading={isLoading}
-        errorMessage={errorMessage}
+        errorMessage={errorMessage ?? localError}
         items={items}
         renderRow={(item) => (
-          <SafeItemRow
-            title={`${item.codigo_almacen} — ${item.nombre}`}
-            subtitle={`Municipio ID: ${item.municipio_id}`}
-            extra={
-              item.direccion ? `Dirección: ${item.direccion}` : undefined
-            }
-          />
+          <View>
+            <SafeItemRow
+              title={`${item.codigo_almacen} — ${item.nombre}`}
+              subtitle={`Municipio ID: ${item.municipio_id}`}
+              extra={
+                item.direccion ? `Dirección: ${item.direccion}` : undefined
+              }
+            />
+            <View
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleEditAlmacen(item)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#2563EB', fontSize: 12 }}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteAlmacen(item.almacen_id)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#DC2626', fontSize: 12 }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
+
+      {/* Formulario alta/edición almacén */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          backgroundColor: '#F9FAFB',
+          padding: 12,
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: 8,
+            color: '#111827',
+            fontSize: 14,
+            fontWeight: '600',
+          }}
+        >
+          {editingId === null ? 'Nuevo almacén' : 'Editar almacén'}
+        </Text>
+
+        <TextInput
+          value={formCodigo}
+          onChangeText={setFormCodigo}
+          placeholder="Código de almacén"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formNombre}
+          onChangeText={setFormNombre}
+          placeholder="Nombre del almacén"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formMunicipioId}
+          onChangeText={setFormMunicipioId}
+          placeholder="Municipio ID (número)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formDireccion}
+          onChangeText={setFormDireccion}
+          placeholder="Dirección (opcional)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmitAlmacen}
+            disabled={isSaving}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: '#111827',
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            <Text
+              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+            >
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditAlmacen}
+              disabled={isSaving}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -521,6 +1315,13 @@ export const ProductoresScreen: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formCodigo, setFormCodigo] = useState<string>('');
+  const [formNombre, setFormNombre] = useState<string>('');
+  const [formMunicipioId, setFormMunicipioId] = useState<string>('');
+  const [formTelefono, setFormTelefono] = useState<string>('');
 
   const handleLoad = async () => {
     setIsLoading(true);
@@ -541,6 +1342,92 @@ export const ProductoresScreen: React.FC = () => {
     void handleLoad();
   }, []);
 
+  const handleSubmitProductor = async () => {
+    const codigo = formCodigo.trim();
+    const nombre = formNombre.trim();
+    const municipio = formMunicipioId.trim();
+
+    if (!codigo || !nombre || !municipio) {
+      setLocalError(
+        'Código, nombre y municipio_id son obligatorios para el productor.'
+      );
+      return;
+    }
+
+    const municipioId = Number(municipio);
+    if (Number.isNaN(municipioId)) {
+      setLocalError('El municipio_id debe ser un número válido.');
+      return;
+    }
+
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      const payload = {
+        codigo_productor: codigo,
+        nombre,
+        municipio_id: municipioId,
+        telefono: formTelefono.trim() || null,
+      };
+
+      if (editingId === null) {
+        await createProductor(payload);
+      } else {
+        await updateProductor(editingId, payload);
+      }
+
+      setFormCodigo('');
+      setFormNombre('');
+      setFormMunicipioId('');
+      setFormTelefono('');
+      setEditingId(null);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo guardar el productor. Verifica la conexión o los datos.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error guardando productor:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditProductor = (item: Productor) => {
+    setEditingId(item.productor_id);
+    setFormCodigo(item.codigo_productor);
+    setFormNombre(item.nombre);
+    setFormMunicipioId(String(item.municipio_id));
+    setFormTelefono(item.telefono ?? '');
+    setLocalError(null);
+  };
+
+  const handleCancelEditProductor = () => {
+    setEditingId(null);
+    setFormCodigo('');
+    setFormNombre('');
+    setFormMunicipioId('');
+    setFormTelefono('');
+    setLocalError(null);
+  };
+
+  const handleDeleteProductor = async (id: number) => {
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      await deleteProductor(id);
+      await handleLoad();
+    } catch (error) {
+      setLocalError('No se pudo eliminar el productor. Intenta nuevamente.');
+      // eslint-disable-next-line no-console
+      console.error('Error eliminando productor:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F6F9' }}>
       <CatalogListScreen<Productor>
@@ -551,16 +1438,180 @@ export const ProductoresScreen: React.FC = () => {
         onSearchTextChange={setSearchText}
         onSearchPress={handleLoad}
         isLoading={isLoading}
-        errorMessage={errorMessage}
+        errorMessage={errorMessage ?? localError}
         items={items}
         renderRow={(item) => (
-          <SafeItemRow
-            title={`${item.codigo_productor} — ${item.nombre}`}
-            subtitle={`Municipio ID: ${item.municipio_id}`}
-            extra={item.telefono ? `Teléfono: ${item.telefono}` : undefined}
-          />
+          <View>
+            <SafeItemRow
+              title={`${item.codigo_productor} — ${item.nombre}`}
+              subtitle={`Municipio ID: ${item.municipio_id}`}
+              extra={item.telefono ? `Teléfono: ${item.telefono}` : undefined}
+            />
+            <View
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleEditProductor(item)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#2563EB', fontSize: 12 }}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteProductor(item.productor_id)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#DC2626', fontSize: 12 }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
+
+      {/* Formulario alta/edición productor */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          backgroundColor: '#F9FAFB',
+          padding: 12,
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: 8,
+            color: '#111827',
+            fontSize: 14,
+            fontWeight: '600',
+          }}
+        >
+          {editingId === null ? 'Nuevo productor' : 'Editar productor'}
+        </Text>
+
+        <TextInput
+          value={formCodigo}
+          onChangeText={setFormCodigo}
+          placeholder="Código de productor"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formNombre}
+          onChangeText={setFormNombre}
+          placeholder="Nombre del productor"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formMunicipioId}
+          onChangeText={setFormMunicipioId}
+          placeholder="Municipio ID (número)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formTelefono}
+          onChangeText={setFormTelefono}
+          placeholder="Teléfono (opcional)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmitProductor}
+            disabled={isSaving}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: '#111827',
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            <Text
+              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+            >
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditProductor}
+              disabled={isSaving}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -573,6 +1624,14 @@ export const LotesCampoScreen: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formCodigo, setFormCodigo] = useState<string>('');
+  const [formProductorId, setFormProductorId] = useState<string>('');
+  const [formVariedadId, setFormVariedadId] = useState<string>('');
+  const [formSuperficie, setFormSuperficie] = useState<string>('');
+  const [formFechaSiembra, setFormFechaSiembra] = useState<string>('');
 
   const handleLoad = async () => {
     setIsLoading(true);
@@ -593,6 +1652,105 @@ export const LotesCampoScreen: React.FC = () => {
     void handleLoad();
   }, []);
 
+  const handleSubmitLoteCampo = async () => {
+    const codigo = formCodigo.trim();
+    const productor = formProductorId.trim();
+    const variedad = formVariedadId.trim();
+    const superficie = formSuperficie.trim();
+    const fechaSiembra = formFechaSiembra.trim();
+
+    if (!codigo || !productor || !variedad || !superficie || !fechaSiembra) {
+      setLocalError(
+        'Código, productor_id, variedad_id, superficie_ha y fecha_siembra son obligatorios.'
+      );
+      return;
+    }
+
+    const productorId = Number(productor);
+    const variedadId = Number(variedad);
+    const superficieHa = Number(superficie);
+
+    if (
+      Number.isNaN(productorId) ||
+      Number.isNaN(variedadId) ||
+      Number.isNaN(superficieHa)
+    ) {
+      setLocalError('productor_id, variedad_id y superficie_ha deben ser numéricos.');
+      return;
+    }
+
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      const payload = {
+        codigo_lote_campo: codigo,
+        productor_id: productorId,
+        variedad_id: variedadId,
+        superficie_ha: superficieHa,
+        fecha_siembra: fechaSiembra,
+      };
+
+      if (editingId === null) {
+        await createLoteCampo(payload);
+      } else {
+        await updateLoteCampo(editingId, payload);
+      }
+
+      setFormCodigo('');
+      setFormProductorId('');
+      setFormVariedadId('');
+      setFormSuperficie('');
+      setFormFechaSiembra('');
+      setEditingId(null);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo guardar el lote de campo. Verifica la conexión o los datos.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error guardando lote de campo:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditLoteCampo = (item: LoteCampo) => {
+    setEditingId(item.lote_campo_id);
+    setFormCodigo(item.codigo_lote_campo);
+    setFormProductorId(String(item.productor_id));
+    setFormVariedadId(String(item.variedad_id));
+    setFormSuperficie(String(item.superficie_ha));
+    setFormFechaSiembra(item.fecha_siembra);
+    setLocalError(null);
+  };
+
+  const handleCancelEditLoteCampo = () => {
+    setEditingId(null);
+    setFormCodigo('');
+    setFormProductorId('');
+    setFormVariedadId('');
+    setFormSuperficie('');
+    setFormFechaSiembra('');
+    setLocalError(null);
+  };
+
+  const handleDeleteLoteCampo = async (id: number) => {
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      await deleteLoteCampo(id);
+      await handleLoad();
+    } catch (error) {
+      setLocalError('No se pudo eliminar el lote. Intenta nuevamente.');
+      // eslint-disable-next-line no-console
+      console.error('Error eliminando lote de campo:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F6F9' }}>
       <CatalogListScreen<LoteCampo>
@@ -603,16 +1761,199 @@ export const LotesCampoScreen: React.FC = () => {
         onSearchTextChange={setSearchText}
         onSearchPress={handleLoad}
         isLoading={isLoading}
-        errorMessage={errorMessage}
+        errorMessage={errorMessage ?? localError}
         items={items}
         renderRow={(item) => (
-          <SafeItemRow
-            title={`${item.codigo_lote_campo}`}
-            subtitle={`Productor ID: ${item.productor_id} · Variedad ID: ${item.variedad_id}`}
-            extra={`Superficie: ${item.superficie_ha} ha`}
-          />
+          <View>
+            <SafeItemRow
+              title={`${item.codigo_lote_campo}`}
+              subtitle={`Productor ID: ${item.productor_id} · Variedad ID: ${item.variedad_id}`}
+              extra={`Superficie: ${item.superficie_ha} ha`}
+            />
+            <View
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleEditLoteCampo(item)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#2563EB', fontSize: 12 }}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteLoteCampo(item.lote_campo_id)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#DC2626', fontSize: 12 }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
+
+      {/* Formulario alta/edición lote de campo */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          backgroundColor: '#F9FAFB',
+          padding: 12,
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: 8,
+            color: '#111827',
+            fontSize: 14,
+            fontWeight: '600',
+          }}
+        >
+          {editingId === null ? 'Nuevo lote de campo' : 'Editar lote de campo'}
+        </Text>
+
+        <TextInput
+          value={formCodigo}
+          onChangeText={setFormCodigo}
+          placeholder="Código de lote de campo"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formProductorId}
+          onChangeText={setFormProductorId}
+          placeholder="Productor ID (número)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formVariedadId}
+          onChangeText={setFormVariedadId}
+          placeholder="Variedad ID (número)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formSuperficie}
+          onChangeText={setFormSuperficie}
+          placeholder="Superficie (ha)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formFechaSiembra}
+          onChangeText={setFormFechaSiembra}
+          placeholder="Fecha siembra (YYYY-MM-DD)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmitLoteCampo}
+            disabled={isSaving}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: '#111827',
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            <Text
+              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+            >
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditLoteCampo}
+              disabled={isSaving}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
