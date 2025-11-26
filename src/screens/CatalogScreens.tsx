@@ -7,7 +7,13 @@
 // -----------------------------------------
 
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text } from 'react-native';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 
 import type {
   Planta,
@@ -21,7 +27,12 @@ import type {
   SensorLectura,
 } from '../api/campoTypes';
 
-import { getPlantas } from '../api/plantasApi';
+import {
+  getPlantas,
+  createPlanta,
+  updatePlanta,
+  deletePlanta,
+} from '../api/plantasApi';
 import { getClientes } from '../api/clientesApi';
 import { getTransportistas } from '../api/transportistasApi';
 import { getAlmacenes } from '../api/almacenesApi';
@@ -38,6 +49,13 @@ export const PlantasScreen: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formCodigoPlanta, setFormCodigoPlanta] = useState<string>('');
+  const [formNombre, setFormNombre] = useState<string>('');
+  const [formMunicipioId, setFormMunicipioId] = useState<string>('');
+  const [formDireccion, setFormDireccion] = useState<string>('');
 
   const handleLoad = async () => {
     setIsLoading(true);
@@ -51,6 +69,92 @@ export const PlantasScreen: React.FC = () => {
       console.error('Error cargando plantas:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSubmitPlanta = async () => {
+    const codigo = formCodigoPlanta.trim();
+    const nombre = formNombre.trim();
+    const municipio = formMunicipioId.trim();
+
+    if (!codigo || !nombre || !municipio) {
+      setLocalError(
+        'Código, nombre y municipio_id son obligatorios para la planta.'
+      );
+      return;
+    }
+
+    const municipioId = Number(municipio);
+    if (Number.isNaN(municipioId)) {
+      setLocalError('El municipio_id debe ser un número válido.');
+      return;
+    }
+
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      const payload = {
+        codigo_planta: codigo,
+        nombre,
+        municipio_id: municipioId,
+        direccion: formDireccion.trim() || null,
+      };
+
+      if (editingId === null) {
+        await createPlanta(payload);
+      } else {
+        await updatePlanta(editingId, payload);
+      }
+
+      setFormCodigoPlanta('');
+      setFormNombre('');
+      setFormMunicipioId('');
+      setFormDireccion('');
+      setEditingId(null);
+      await handleLoad();
+    } catch (error) {
+      setLocalError(
+        'No se pudo guardar la planta. Verifica la conexión o los datos.'
+      );
+      // eslint-disable-next-line no-console
+      console.error('Error guardando planta:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditPlanta = (item: Planta) => {
+    setEditingId(item.planta_id);
+    setFormCodigoPlanta(item.codigo_planta);
+    setFormNombre(item.nombre);
+    setFormMunicipioId(String(item.municipio_id));
+    setFormDireccion(item.direccion ?? '');
+    setLocalError(null);
+  };
+
+  const handleCancelEditPlanta = () => {
+    setEditingId(null);
+    setFormCodigoPlanta('');
+    setFormNombre('');
+    setFormMunicipioId('');
+    setFormDireccion('');
+    setLocalError(null);
+  };
+
+  const handleDeletePlanta = async (plantaId: number) => {
+    setIsSaving(true);
+    setLocalError(null);
+
+    try {
+      await deletePlanta(plantaId);
+      await handleLoad();
+    } catch (error) {
+      setLocalError('No se pudo eliminar la planta. Intenta nuevamente.');
+      // eslint-disable-next-line no-console
+      console.error('Error eliminando planta:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -68,18 +172,180 @@ export const PlantasScreen: React.FC = () => {
         onSearchTextChange={setSearchText}
         onSearchPress={handleLoad}
         isLoading={isLoading}
-        errorMessage={errorMessage}
+        errorMessage={errorMessage ?? localError}
         items={items}
         renderRow={(item) => (
-          <React.Fragment>
+          <View>
             <SafeItemRow
               title={`${item.codigo_planta} — ${item.nombre}`}
               subtitle={`Municipio ID: ${item.municipio_id}`}
               extra={item.direccion ? `Dirección: ${item.direccion}` : null}
             />
-          </React.Fragment>
+            <View
+              style={{
+                marginTop: 6,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleEditPlanta(item)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#2563EB', fontSize: 12 }}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeletePlanta(item.planta_id)}
+                disabled={isSaving}
+                style={{ paddingVertical: 2, paddingHorizontal: 4 }}
+              >
+                <Text style={{ color: '#DC2626', fontSize: 12 }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
+
+      {/* Formulario de alta/edición de planta */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 16,
+          right: 16,
+          bottom: 16,
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          backgroundColor: '#F9FAFB',
+          padding: 12,
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: 8,
+            color: '#111827',
+            fontSize: 14,
+            fontWeight: '600',
+          }}
+        >
+          {editingId === null ? 'Nueva planta' : 'Editar planta'}
+        </Text>
+
+        <TextInput
+          value={formCodigoPlanta}
+          onChangeText={setFormCodigoPlanta}
+          placeholder="Código de planta"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formNombre}
+          onChangeText={setFormNombre}
+          placeholder="Nombre de la planta"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formMunicipioId}
+          onChangeText={setFormMunicipioId}
+          placeholder="Municipio ID (número)"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="numeric"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <TextInput
+          value={formDireccion}
+          onChangeText={setFormDireccion}
+          placeholder="Dirección (opcional)"
+          placeholderTextColor="#9CA3AF"
+          style={{
+            marginBottom: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: '#D1D5DB',
+            backgroundColor: '#FFFFFF',
+            color: '#111827',
+            fontSize: 13,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          <TouchableOpacity
+            onPress={handleSubmitPlanta}
+            disabled={isSaving}
+            style={{
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              backgroundColor: '#111827',
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            <Text
+              style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '500' }}
+            >
+              {editingId === null ? 'Crear' : 'Guardar cambios'}
+            </Text>
+          </TouchableOpacity>
+
+          {editingId !== null && (
+            <TouchableOpacity
+              onPress={handleCancelEditPlanta}
+              disabled={isSaving}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              <Text style={{ color: '#374151', fontSize: 13 }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
